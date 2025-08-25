@@ -52,6 +52,10 @@ import Accounting from '@/pages/Accounting';
 import Team from '@/pages/Team';
 import Communications from '@/pages/Communications';
 
+// AI Components
+import AIDashboard from '@/components/ai/AIDashboard';
+import AIAutomationRules from '@/components/ai/AIAutomationRules';
+
 // Protected Route Component
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -340,7 +344,7 @@ export function UnifiedRouter() {
         element={
           <ProtectedRoute>
             <TenantAdminLayout>
-              <TenantAdminDashboard />
+              <AIDashboard />
             </TenantAdminLayout>
           </ProtectedRoute>
         } 
@@ -350,7 +354,7 @@ export function UnifiedRouter() {
         element={
           <ProtectedRoute>
             <TenantAdminLayout>
-              <TenantAdminDashboard />
+              <AIAutomationRules />
             </TenantAdminLayout>
           </ProtectedRoute>
         } 

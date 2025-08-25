@@ -121,6 +121,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [fetchBusinessSettings]);
 
+  // Expose refresh function globally for business settings
+  useEffect(() => {
+    (window as any).refreshAppContext = refreshBusinessSettings;
+    return () => {
+      delete (window as any).refreshAppContext;
+    };
+  }, [refreshBusinessSettings]);
+
   const triggerCurrencyUpdate = useCallback(() => {
     setCurrencyUpdateTrigger(prev => prev + 1);
   }, []);

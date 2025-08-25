@@ -293,7 +293,7 @@ const UnifiedUserManagement = () => {
           <Button onClick={fetchAllData} variant="outline">
             Refresh
           </Button>
-          {hasRoleAccess(['admin', 'manager']) && (
+          {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
             <Dialog open={isCreatingUser} onOpenChange={setIsCreatingUser}>
               <DialogTrigger asChild>
                 <Button>
@@ -494,11 +494,11 @@ const UnifiedUserManagement = () => {
                             {process.env.NODE_ENV === 'development' && (
                               <DropdownMenuItem disabled>
                                 <AlertTriangle className="h-4 w-4 mr-2" />
-                                Role: {userRole || 'No role'} | HasAccess: {hasRoleAccess(['admin', 'manager']) ? 'Yes' : 'No'}
+                                Role: {userRole || 'No role'} | HasAccess: {hasRoleAccess(['superadmin', 'admin', 'manager']) ? 'Yes' : 'No'}
                               </DropdownMenuItem>
                             )}
 
-                            {hasRoleAccess(['admin', 'manager']) && (
+                            {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
                               <>
                                 <DropdownMenuSeparator />
                                 
@@ -620,7 +620,7 @@ const UnifiedUserManagement = () => {
         <TabsContent value="roles" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Manage Roles</h3>
-            {hasRoleAccess(['admin', 'manager']) && (
+            {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
               <Dialog open={isCreatingRole} onOpenChange={setIsCreatingRole}>
                 <DialogTrigger asChild>
                   <Button>
@@ -745,7 +745,7 @@ const UnifiedUserManagement = () => {
                       <Badge variant="outline" className="text-xs">
                         Level {role.level}
                       </Badge>
-                      {hasRoleAccess(['admin', 'manager']) && role.is_editable && (
+                      {hasRoleAccess(['superadmin', 'admin', 'manager']) && role.is_editable && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">

@@ -515,6 +515,11 @@ export function BusinessSettingsEnhanced() {
       // Update local state
       setSettings(data);
       
+      // Refresh AppContext to ensure changes are reflected throughout the app
+      if (window.refreshAppContext) {
+        window.refreshAppContext();
+      }
+      
       toast({
         title: "Settings Saved",
         description: "Your business settings have been updated successfully.",
