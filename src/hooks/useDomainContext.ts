@@ -62,14 +62,14 @@ export function useDomainContext() {
       const initializeDomain = async (): Promise<DomainConfig> => {
         console.log('🌐 Initializing domain context for:', window.location.hostname);
         
-        const config = await domainManager.getCurrentDomainConfig();
+        const config = await domainManager.getInstance().getCurrentDomainConfig();
         console.log('🔍 Domain config resolved:', config);
         
         // Set up tenant context if needed
         if (config?.isSubdomain && config.tenantId) {
           console.log('🏢 Setting up tenant context for:', config.tenantId);
           try {
-            await domainManager.setupTenantContext(config.tenantId);
+            await domainManager.getInstance().setupTenantContext(config.tenantId);
           } catch (error) {
             console.warn('⚠️ Tenant context setup failed:', error);
           }
@@ -120,7 +120,7 @@ export function useDomainContext() {
         globalPromise = null;
         
         setLoading(true);
-        const config = await domainManager.getCurrentDomainConfig();
+        const config = await domainManager.getInstance().getCurrentDomainConfig();
         
         globalDomainConfig = config;
         globalLoading = false;

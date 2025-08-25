@@ -349,7 +349,16 @@ class DomainManager {
 }
 
 // Export singleton instance
-export const domainManager = new DomainManager();
+let _domainManager: DomainManager | null = null;
+
+export const domainManager = {
+  getInstance(): DomainManager {
+    if (!_domainManager) {
+      _domainManager = new DomainManager();
+    }
+    return _domainManager;
+  }
+};
 
 // Helper functions
 export const getCurrentDomain = () => window.location.hostname;
