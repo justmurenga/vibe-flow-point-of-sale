@@ -22,7 +22,7 @@ import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import TenantManagement from '@/pages/TenantManagement';
 import SuperAdminUserManagement from '@/pages/SuperAdminUserManagement';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { AppProvider } from '@/contexts/AppContext';
 import { TenantSetupCompletion } from '@/components/TenantSetupCompletion';
 import Sales from '@/pages/Sales';

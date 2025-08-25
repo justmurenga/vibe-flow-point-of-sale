@@ -206,7 +206,6 @@ const businessSettingsSchema = z.object({
   enable_mobile_money: z.boolean().default(false),
   enable_bank_transfers: z.boolean().default(false),
   enable_credit_sales: z.boolean().default(true),
-  pos_default_payment_method: z.string().default("cash"),
 });
 
 interface BusinessSettings {
@@ -584,8 +583,8 @@ export function BusinessSettingsEnhanced() {
 
         {/* Tabs wrapper around navigation and content */}
         <Tabs defaultValue="company">
-          {/* Enhanced Navigation with Modern Glass Effect */}
-          <div className="sticky top-4 z-30 bg-background/80 backdrop-blur-md border border-border/50 rounded-2xl p-3 shadow-xl mb-8">
+        {/* Enhanced Navigation with Modern Glass Effect */}
+        <div className="sticky top-4 z-30 bg-background/80 backdrop-blur-md border border-border/50 rounded-2xl p-3 shadow-xl mb-8">
             <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 h-auto bg-transparent gap-2 p-0">
               <TabsTrigger 
                 value="company" 
@@ -651,12 +650,12 @@ export function BusinessSettingsEnhanced() {
                 <span className="font-medium">Migration</span>
               </TabsTrigger>
             </TabsList>
-          </div>
+        </div>
 
-          {/* Enhanced Form Container */}
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              
+        {/* Enhanced Form Container */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
               {/* Company Tab */}
               <TabsContent value="company" className="space-y-8 mt-0">
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -804,28 +803,28 @@ export function BusinessSettingsEnhanced() {
                             <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
                           </div>
                         )}
-                        <div className="space-y-4 text-center">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="cursor-pointer hover:bg-primary/10 transition-colors"
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {logoPreview ? "Change Logo" : "Upload Logo"}
-                          </Button>
-                          <Input
-                            id="logo-upload"
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoUpload}
-                          />
-                          <p className="text-sm text-muted-foreground">
-                            Recommended: 200x200px, PNG or JPG format
-                          </p>
-                        </div>
+                          <div className="space-y-4 text-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="cursor-pointer hover:bg-primary/10 transition-colors"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {logoPreview ? "Change Logo" : "Upload Logo"}
+                            </Button>
+                            <Input
+                              id="logo-upload"
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleLogoUpload}
+                            />
+                            <p className="text-sm text-muted-foreground">
+                              Recommended: 200x200px, PNG or JPG format
+                            </p>
+                          </div>
                       </div>
                     </CardContent>
                   </Card>
