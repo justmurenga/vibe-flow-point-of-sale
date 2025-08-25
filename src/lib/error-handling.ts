@@ -1,4 +1,5 @@
 import { toast } from '@/hooks/use-toast';
+import { useCallback } from 'react';
 
 // Error types
 export enum ErrorType {

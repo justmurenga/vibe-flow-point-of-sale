@@ -31,6 +31,7 @@ import Customers from '@/pages/Customers';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import { PageLoader } from '@/components/PageLoader';
+import { ExternalIntegrationsManager } from '@/components/integrations/ExternalIntegrationsManager';
 
 interface UnifiedRouterProps {
   children?: React.ReactNode;
@@ -180,6 +181,7 @@ export function UnifiedRouter({ children }: UnifiedRouterProps) {
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/integrations" element={<ExternalIntegrationsManager />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </AppProvider>
