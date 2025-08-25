@@ -1,5 +1,8 @@
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDomainContext } from '@/contexts/DomainContext';
+import { PageLoader } from '@/components/PageLoader';
 import { TenantAdminLayout } from './TenantAdminLayout';
 import ProtectedRoute from './ProtectedRoute';
 import { SubscriptionGuard } from './SubscriptionGuard';
@@ -16,13 +19,10 @@ const Settings = lazy(() => import('../pages/Settings'));
 const Team = lazy(() => import('../pages/Team'));
 const Communications = lazy(() => import('../pages/Communications'));
 
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
-
 export function SimplifiedTenantRoutes() {
+  const { user, loading, userRole } = useAuth();
+  const { domainConfig } = useDomainContext();
+
   return (
     <ProtectedRoute requireAuth={true}>
       <SubscriptionGuard>
