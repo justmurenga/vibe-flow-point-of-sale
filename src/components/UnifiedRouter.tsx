@@ -24,7 +24,7 @@ import { TenantManagement } from '@/pages/TenantManagement';
 import { SuperAdminUserManagement } from '@/pages/SuperAdminUserManagement';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AppProvider } from '@/contexts/AppContext';
-import { TenantSetupCompletion } from '@/pages/TenantSetupCompletion';
+import { TenantSetupCompletion } from '@/components/TenantSetupCompletion';
 import { Sales } from '@/pages/Sales';
 import { StockManagement } from '@/pages/StockManagement';
 import { Customers } from '@/pages/Customers';
