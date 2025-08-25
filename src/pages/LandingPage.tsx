@@ -4,17 +4,18 @@ import { useNavigate } from "react-router-dom";
 import Index from "./Index";
 import { getCurrentDomain, isSubdomain, isCustomDomain } from "@/lib/domain-manager";
 import { supabase } from "@/integrations/supabase/client";
+import { UnifiedSignup } from "@/components/UnifiedSignup";
 
 export default function LandingPage() {
   const { user, loading, tenantId, userRole } = useAuth();
   const navigate = useNavigate();
   const [redirecting, setRedirecting] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const { isMainDevDomain, shouldRedirect, isApexShop, isApexOnline } = useMemo(() => {
     const domain = getCurrentDomain();
     const isMainDev = domain === "vibenet.online" || domain === "www.vibenet.online";
     const apexShop = domain === "vibenet.shop" || domain === "www.vibenet.shop";
-    // isApexOnline should NOT include vibenet.online as it's the main dev domain
     const apexOnline = false; // No apex online domains currently
     const redirect = !isMainDev && (isSubdomain(domain) || isCustomDomain(domain) || apexShop);
     return { isMainDevDomain: isMainDev, shouldRedirect: redirect, isApexShop: apexShop, isApexOnline: apexOnline };
@@ -98,26 +99,35 @@ export default function LandingPage() {
 
   // Show landing page while loading
   if (loading) {
+    return <Index />;
+  }
+
+  // Show signup modal if requested
+  if (showSignup) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <UnifiedSignup 
+          mode="trial"
+          onSuccess={(result) => {
+            setShowSignup(false);
+            // Handle successful signup
+            if (result.tenant) {
+              navigate('/dashboard');
+            }
+          }}
+          onError={(error) => {
+            console.error('Signup error:', error);
+            // Error handling is done within the component
+          }}
+        />
       </div>
     );
   }
 
-  // Show redirect loader if needed
-  if (redirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // On main dev domain, always show landing page even if authenticated
-  if (user && !isMainDevDomain) {
-    return null; // Will redirect via useEffect
-  }
-
-  return <Index />;
+  // Show main landing page
+  return (
+    <Index 
+      onSignupClick={() => setShowSignup(true)}
+    />
+  );
 }

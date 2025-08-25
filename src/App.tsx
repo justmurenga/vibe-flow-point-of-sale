@@ -22,6 +22,9 @@ import { AppOptimizer } from "./components/AppOptimizer";
 import { supabase } from "@/integrations/supabase/client";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { TabStabilityProvider } from "./components/TabStabilityProvider";
+import { UnifiedSignup } from '@/components/UnifiedSignup';
+import { UnifiedAuthCallback } from '@/components/UnifiedAuthCallback';
+import { UnifiedUserInvitation } from '@/components/UnifiedUserInvitation';
 
 // Import critical components directly to avoid dynamic import failures
 import LandingPage from "./pages/LandingPage";
@@ -196,420 +199,39 @@ const DomainRouter = () => {
   const { user, loading: authLoading, userRole } = useAuth();
   const location = useLocation();
   
-  // Removed excessive logging that caused tab switching reload issues
-  
-  // Handle auth callbacks with React Router to prevent hydration issues
+  // Simplified routing logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
-    console.log('🔄 App Router - Current location:', {
-      pathname: location.pathname,
-      search: location.search,
-      hash: window.location.hash,
-      href: window.location.href
-    });
     
     const hash = window.location.hash;
     const searchParams = new URLSearchParams(location.search || '');
     
-    // Check if we're at root with OAuth fragments - redirect to callback
-    if (location.pathname === '/' && hash && /access_token|error|type=/.test(hash)) {
-      console.log('🔀 OAuth fragments detected at root - redirecting to callback');
+    // Handle OAuth fragments
+    if (hash && /access_token|error|type=/.test(hash)) {
       const callbackUrl = `/auth/callback${location.search}${hash}`;
-      console.log('🎯 Redirecting to:', callbackUrl);
       window.location.replace(callbackUrl);
       return;
     }
     
-    // Also handle OAuth fragments on /auth path (some OAuth providers redirect here)
-    if (location.pathname === '/auth' && hash && /access_token|error/.test(hash)) {
-      console.log('🔀 OAuth fragments detected on /auth - redirecting to callback');
-      const callbackUrl = `/auth/callback${location.search}${hash}`;
-      console.log('🎯 Redirecting to:', callbackUrl);
-      window.location.replace(callbackUrl);
-      return;
-    }
-    
-    // Only redirect to reset-password for specific invite/recovery types, not Google OAuth
-    const isInviteCallback = hash && /type=invite|type=recovery/i.test(hash);
-    const isGoogleOAuth = searchParams.get('type') === 'google' || location.pathname === '/auth/callback';
-    
-    console.log('🔍 Router checks:', {
-      isInviteCallback,
-      isGoogleOAuth,
-      currentPath: location.pathname
-    });
-    
-    if (isInviteCallback && !isGoogleOAuth && location.pathname !== '/reset-password') {
-      const search = new URLSearchParams(location.search || '');
-      if (!search.get('from')) search.set('from', 'invite');
-      const qs = search.toString();
+    // Handle auth redirects
+    if (user && !authLoading) {
+      const domain = window.location.hostname;
+      const isMainDomain = domain === 'vibenet.online' || domain === 'www.vibenet.online';
       
-      console.log('🔀 Redirecting to reset-password');
-      // Use setTimeout to avoid hydration mismatch
-      setTimeout(() => {
-        window.location.href = `/reset-password${qs ? `?${qs}` : ''}${hash}`;
-      }, 0);
+      if (!isMainDomain && userRole !== 'superadmin') {
+        // Redirect to dashboard on tenant subdomains
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
+      } else if (isMainDomain && userRole === 'superadmin') {
+        // Redirect superadmins to superadmin dashboard
+        setTimeout(() => {
+          navigate('/superadmin', { replace: true });
+        }, 100);
+      }
     }
-  }, [location.pathname, location.search]);
-  
-  // Simplified auth session check - removed to prevent excessive API calls
-  const [showAuthFix, setShowAuthFix] = useState(false);
-  
-  // Handle subdomain without tenant ID
-  if (domainConfig?.isSubdomain && !domainConfig.tenantId) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="*" element={<Navigate to="/auth" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
+  }, [user, authLoading, userRole, location]);
 
-  const currentPath = location.pathname;
-  if (currentPath === '/auth' || currentPath === '/auth/callback' || currentPath === '/reset-password' || currentPath === '/forgot-password') {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route 
-            path="/auth" 
-            element={
-              domainConfig?.isSubdomain 
-                ? (<AuthPageWrapper><Auth /></AuthPageWrapper>) 
-                : (<Auth />)
-            } 
-          />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="*" element={<Navigate to="/auth" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-  
-  if (loading) {
-    return <PageLoader />;
-  }
-
-  if (authLoading) {
-    return <PageLoader />;
-  }
-  
-  // Show auth session fix if needed
-  if (showAuthFix) {
-    return <AuthSessionFix />;
-  }
-
-  // If on subdomain, show tenant-specific routes only
-  if (domainConfig?.isSubdomain && domainConfig.tenantId) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* Auth routes - redirect to dashboard if already authenticated on subdomain */}
-          <Route 
-            path="/auth" 
-            element={
-              <AuthPageWrapper>
-                <Auth />
-              </AuthPageWrapper>
-            } 
-          />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Root route - redirect unauthenticated users to login */}
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff', 'admin']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <TenantAdminDashboard />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Dashboard route - check for setup completion first */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff', 'admin']}>
-                <SubscriptionGuard>
-                  <TenantSetupCompletion />
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Tenant Admin routes - all the same as main domain */}
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <TenantAdminDashboard />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/products" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Products />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/stock" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="advanced_inventory">
-                    <TenantAdminLayout>
-                      <StockManagement />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/customers" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Customers />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/sales" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Sales />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/purchases" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Purchases />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/accounting" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Accounting />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/reports" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Reports />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/team" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Team />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/settings" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <TenantSettings />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/communications" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <TenantCommunications />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Advanced Customer Management Routes for Phase 8.5 */}
-          <Route 
-            path="/admin/customer-management" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="advanced_customer_management">
-                    <TenantAdminLayout>
-                      <AdvancedCustomerManagementDashboard />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* AI Routes for Phase 5 */}
-          <Route 
-            path="/admin/ai-dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="ai_features">
-                    <TenantAdminLayout>
-                      <AIDashboard />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/ai-automation" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="ai_features">
-                    <TenantAdminLayout>
-                      <AIAutomationRules />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/ai-performance" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="ai_features">
-                    <TenantAdminLayout>
-                      <AIPerformanceMetrics />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Advanced Analytics & Integrations Routes for Phase 7 */}
-          <Route 
-            path="/admin/advanced-analytics" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="ai_features">
-                    <TenantAdminLayout>
-                      <AdvancedAnalyticsDashboard />
-                    </TenantAdminLayout>
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/admin/integrations" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <ExternalIntegrationsManager />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Profile Route - accessible to all authenticated users */}
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-                <SubscriptionGuard>
-                  <TenantAdminLayout>
-                    <Profile />
-                  </TenantAdminLayout>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Mobile Cashier PWA Route */}
-          <Route 
-            path="/mobile" 
-            element={
-              <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-                <SubscriptionGuard>
-                  <FeatureGuard featureName="mobile_offline">
-                    <CashierPWA deviceId={`device_${Date.now()}`} tenantId={domainConfig.tenantId} />
-                  </FeatureGuard>
-                </SubscriptionGuard>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Fallback routes */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    );
-  }
-
-  // This check is now handled above to prevent Auth component loading
-
-  // Main domain routes (all existing routes)
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -617,402 +239,54 @@ const DomainRouter = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/tenant-redirect" element={<TenantRedirect />} />
+        <Route path="/auth/callback" element={<UnifiedAuthCallback />} />
+        <Route path="/signup" element={<UnifiedSignup mode="trial" />} />
+        <Route path="/invite" element={<UnifiedUserInvitation />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/trial-signup" element={<TrialSignup />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
-        <Route path="/signup" element={<Navigate to="/" replace />} />
+        {/* Success Pages */}
         <Route path="/success" element={<Success />} />
+        
+        {/* Legal Pages */}
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/company-info" element={<CompanyInfo />} />
-        <Route path="/currency-debug" element={<CurrencyDebug />} />
-        <Route path="/careers" element={<Careers />} />
         
         {/* Super Admin Routes */}
         <Route 
-          path="/superadmin" 
+          path="/superadmin/*" 
           element={
             <ProtectedRoute allowedRoles={['superadmin']}>
               <SuperAdminLayout>
-                <SuperAdminDashboard />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/tenants" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <TenantManagement />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/users" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminUserManagement />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/analytics" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminAnalytics />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/revenue" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminRevenue />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/system" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminSystemHealth />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/database" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminDatabase />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/security" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminSecurity />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/communications" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminCommunications />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/plans" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminPlanManagement />
-              </SuperAdminLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/superadmin/settings" 
-          element={
-            <ProtectedRoute allowedRoles={['superadmin']}>
-              <SuperAdminLayout>
-                <SuperAdminSettings />
+                <Routes>
+                  <Route path="/" element={<SuperAdminDashboard />} />
+                  <Route path="/tenants" element={<TenantManagement />} />
+                  <Route path="/users" element={<SuperAdminUserManagement />} />
+                </Routes>
               </SuperAdminLayout>
             </ProtectedRoute>
           } 
         />
         
-        {/* Tenant Admin Routes */}
+        {/* Protected Routes */}
         <Route 
-          path="/admin" 
+          path="/*" 
           element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <TenantAdminDashboard />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
+            <ProtectedRoute>
+              <AppProvider>
+                <Routes>
+                  <Route path="/dashboard" element={<TenantSetupCompletion />} />
+                  <Route path="/sales" element={<Sales />} />
+                  <Route path="/inventory" element={<StockManagement />} />
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Routes>
+              </AppProvider>
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/admin/products" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Products />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/stock" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="advanced_inventory">
-                  <TenantAdminLayout>
-                    <StockManagement />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/reports" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Reports />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/team" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Team />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/customers" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Customers />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/settings" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <TenantSettings />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/communications" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <TenantCommunications />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* AI Routes for Phase 5 */}
-        <Route 
-          path="/admin/ai-dashboard" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="ai_features">
-                  <TenantAdminLayout>
-                    <AIDashboard />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/ai-automation" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="ai_features">
-                  <TenantAdminLayout>
-                    <AIAutomationRules />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/ai-performance" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="ai_features">
-                  <TenantAdminLayout>
-                    <AIPerformanceMetrics />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Advanced Analytics & Integrations Routes for Phase 7 */}
-        <Route 
-          path="/admin/advanced-analytics" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="ai_features">
-                  <TenantAdminLayout>
-                    <AdvancedAnalyticsDashboard />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/integrations" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <ExternalIntegrationsManager />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Advanced Customer Management Routes for Phase 8.5 */}
-        <Route 
-          path="/admin/customer-management" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="advanced_customer_management">
-                  <TenantAdminLayout>
-                    <AdvancedCustomerManagementDashboard />
-                  </TenantAdminLayout>
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/sales" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Sales />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/purchases" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Purchases />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/ar-ap" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <AccountsReceivablePayable />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/accounting" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Accounting />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        
-        {/* Profile Route - accessible to all authenticated users */}
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-              <SubscriptionGuard>
-                <TenantAdminLayout>
-                  <Profile />
-                </TenantAdminLayout>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Mobile Cashier PWA Route */}
-        <Route 
-          path="/mobile" 
-          element={
-            <ProtectedRoute allowedRoles={['Business Owner', 'Store Manager', 'Sales Staff']}>
-              <SubscriptionGuard>
-                <FeatureGuard featureName="mobile_offline">
-                  <CashierPWA deviceId={`device_${Date.now()}`} tenantId={user?.tenant_id} />
-                </FeatureGuard>
-              </SubscriptionGuard>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Fallback - redirect to appropriate dashboard */}
-        <Route path="/dashboard" element={<ProtectedRoute><div /></ProtectedRoute>} />
-        
-        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );

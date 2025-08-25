@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Zap, Shield, Users, BarChart3, TrendingUp, Building2, Lock, Star, MousePointer, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LazyImage } from "@/components/ui/image-lazy";
 import { TenantCreationModal } from "@/components/TenantCreationModal";
 import ContactForm from "@/components/ContactForm";
@@ -13,44 +13,144 @@ import { DemoSection } from "@/components/DemoSection";
 import Footer from "@/components/Footer";
 import posSystemHero from "@/assets/pos-system-hero.jpg";
 import dashboardPreview from "@/assets/dashboard-preview.jpg";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useMemo } from "react";
+import { getCurrentDomain, isSubdomain, isCustomDomain } from "@/lib/domain-manager";
+import { supabase } from "@/integrations/supabase/client";
+import { UnifiedSignup } from "@/components/UnifiedSignup";
 
-const Index = () => {
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+interface IndexProps {
+  onSignupClick?: () => void;
+}
 
-  const handleStartTrial = () => {
-    setIsSignupModalOpen(true);
-  };
+export default function Index({ onSignupClick }: IndexProps) {
+  const { user, loading, tenantId, userRole } = useAuth();
+  const navigate = useNavigate();
+  const [redirecting, setRedirecting] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
-  const handleCloseSignupModal = () => {
-    setIsSignupModalOpen(false);
-  };
+  const { isMainDevDomain, shouldRedirect, isApexShop, isApexOnline } = useMemo(() => {
+    const domain = getCurrentDomain();
+    const isMainDev = domain === "vibenet.online" || domain === "www.vibenet.online";
+    const apexShop = domain === "vibenet.shop" || domain === "www.vibenet.shop";
+    const apexOnline = false; // No apex online domains currently
+    const redirect = !isMainDev && (isSubdomain(domain) || isCustomDomain(domain) || apexShop);
+    return { isMainDevDomain: isMainDev, shouldRedirect: redirect, isApexShop: apexShop, isApexOnline: apexOnline };
+  }, []);
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-      setIsMobileMenuOpen(false);
+  // Prevent infinite redirects by tracking if redirect has been attempted
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
+
+  useEffect(() => {
+    // Only redirect once per user session
+    if (!loading && user && !redirectAttempted) {
+      setRedirectAttempted(true);
+      
+      const handleRedirect = async () => {
+        // On apex domains, send authenticated users to their tenant's primary domain
+        if (isApexShop || isApexOnline) {
+          setRedirecting(true);
+          console.info('LandingPage: apex redirect start', { domain: getCurrentDomain(), tenantId, userRole });
+          try {
+            // Superadmins should stay on apex and go to SuperAdmin
+            if (userRole === 'superadmin') {
+              console.info('LandingPage: superadmin on apex, routing to /superadmin');
+              navigate('/superadmin');
+              return;
+            }
+
+            if (!tenantId) {
+              console.warn('LandingPage: missing tenantId, falling back to vibenet.online');
+              window.location.href = "https://vibenet.online/dashboard";
+              return;
+            }
+            // Try primary verified domain first
+            const { data: primary, error: primaryError } = await supabase
+              .from("tenant_domains")
+              .select("domain_name")
+              .eq("tenant_id", tenantId)
+              .eq("is_active", true)
+              .eq("is_primary", true)
+              .eq("status", "verified")
+              .maybeSingle();
+            if (primaryError) console.warn('LandingPage: primary domain query error', primaryError);
+
+            let targetDomain = primary?.domain_name as string | undefined;
+
+            // If none, ensure a subdomain exists and use it
+            if (!targetDomain) {
+              const { data: ensuredId, error: ensureErr } = await supabase.rpc("ensure_tenant_subdomain", {
+                tenant_id_param: tenantId,
+              });
+              if (ensureErr) console.warn('LandingPage: ensure subdomain error', ensureErr);
+              if (ensuredId) {
+                const { data: ensured } = await supabase
+                  .from("tenant_domains")
+                  .select("domain_name")
+                  .eq("id", ensuredId)
+                  .maybeSingle();
+                targetDomain = ensured?.domain_name as string | undefined;
+              }
+            }
+
+            if (targetDomain && getCurrentDomain() !== targetDomain) {
+              console.info('LandingPage: redirecting to tenant domain', targetDomain);
+              window.location.href = `https://${targetDomain}/dashboard`;
+            } else {
+              console.info('LandingPage: navigating to /dashboard on current domain');
+              navigate("/dashboard");
+            }
+          } catch (e) {
+            console.error('LandingPage: apex redirect failed, falling back', e);
+            window.location.href = "https://vibenet.online/dashboard";
+          }
+        } else if (shouldRedirect) {
+          setRedirecting(true);
+          console.info('LandingPage: internal redirect to /dashboard');
+          navigate('/dashboard');
+        }
+      };
+      handleRedirect();
+    }
+  }, [user, loading]); // Reduced dependencies to prevent loops
+
+  // Show landing page while loading
+  if (loading) {
+    return <Index />;
+  }
+
+  // Show signup modal if requested
+  if (showSignup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <UnifiedSignup 
+          mode="trial"
+          onSuccess={(result) => {
+            setShowSignup(false);
+            // Handle successful signup
+            if (result.tenant) {
+              navigate('/dashboard');
+            }
+          }}
+          onError={(error) => {
+            console.error('Signup error:', error);
+            // Error handling is done within the component
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Update the signup button to use the callback
+  const handleSignupClick = () => {
+    if (onSignupClick) {
+      onSignupClick();
+    } else {
+      navigate('/signup');
     }
   };
 
-  const navigationItems = [
-    { name: "Home", id: "home" },
-    { name: "Features", id: "features" },
-    { name: "Pricing", id: "pricing" },
-    { name: "Demo", id: "demo" },
-    { name: "Security", id: "security" },
-    { name: "Contact", id: "contact" }
-  ];
-
-  // Add admin settings link for testing
-  const isLoggedIn = false; // You can check actual auth state here
-  
-  const debugNavigationItems = [
-    ...navigationItems,
-    ...(isLoggedIn ? [{ name: "Admin Settings", id: "admin", href: "/admin/settings" }] : [])
-  ];
-
+  // Show main landing page
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Fixed Navigation Header */}
@@ -67,52 +167,122 @@ const Index = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => (
+              {/* navigationItems.map((item) => ( */}
                 <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  key="home"
+                  onClick={() => navigate('/')}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {item.name}
+                  Home
                 </button>
-              ))}
+                <button
+                  key="features"
+                  onClick={() => navigate('/#features')}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Features
+                </button>
+                <button
+                  key="pricing"
+                  onClick={() => navigate('/#pricing')}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Pricing
+                </button>
+                <button
+                  key="demo"
+                  onClick={() => navigate('/#demo')}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Demo
+                </button>
+                <button
+                  key="security"
+                  onClick={() => navigate('/#security')}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Security
+                </button>
+                <button
+                  key="contact"
+                  onClick={() => navigate('/#contact')}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Contact
+                </button>
+              {/* ))} */}
             </div>
 
             {/* CTA Button & Mobile Menu */}
             <div className="flex items-center space-x-4">
-              <Button onClick={handleStartTrial} className="hidden sm:flex">
+              <Button onClick={handleSignupClick} className="hidden sm:flex">
                 Start Free Trial
               </Button>
               
               {/* Mobile Menu Button */}
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => navigate('/auth')}
                 className="md:hidden p-2"
               >
-                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <Menu className="h-5 w-5" />
               </button>
             </div>
           </div>
 
           {/* Mobile Navigation Menu */}
-          {isMobileMenuOpen && (
+          {/* isMobileMenuOpen && ( */}
             <div className="md:hidden py-4 border-t border-border">
               <div className="flex flex-col space-y-4">
-                {navigationItems.map((item) => (
+                {/* navigationItems.map((item) => ( */}
                   <button
-                    key={item.id}
-                    onClick={() => scrollToSection(item.id)}
+                    key="home"
+                    onClick={() => navigate('/')}
                     className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
                   >
-                    {item.name}
+                    Home
                   </button>
-                ))}
-                <Button onClick={handleStartTrial} className="mt-4">
-                  Start Free Trial
-                </Button>
+                  <button
+                    key="features"
+                    onClick={() => navigate('/#features')}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
+                  >
+                    Features
+                  </button>
+                  <button
+                    key="pricing"
+                    onClick={() => navigate('/#pricing')}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
+                  >
+                    Pricing
+                  </button>
+                  <button
+                    key="demo"
+                    onClick={() => navigate('/#demo')}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
+                  >
+                    Demo
+                  </button>
+                  <button
+                    key="security"
+                    onClick={() => navigate('/#security')}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
+                  >
+                    Security
+                  </button>
+                  <button
+                    key="contact"
+                    onClick={() => navigate('/#contact')}
+                    className="text-left text-muted-foreground hover:text-primary transition-colors py-2"
+                  >
+                    Contact
+                  </button>
+                  <Button onClick={handleSignupClick} className="mt-4">
+                    Start Free Trial
+                  </Button>
+                {/* ))} */}
               </div>
             </div>
-          )}
+          {/* )} */}
         </div>
       </nav>
 
@@ -145,7 +315,7 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="text-lg px-8 py-6" onClick={handleStartTrial}>
+              <Button size="lg" className="text-lg px-8 py-6" onClick={handleSignupClick}>
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -153,7 +323,7 @@ const Index = () => {
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6"
-                onClick={() => scrollToSection('demo')}
+                onClick={() => navigate('/#demo')}
               >
                 View Demo
               </Button>
@@ -225,12 +395,12 @@ const Index = () => {
 
       {/* Pricing Section */}
       <section id="pricing">
-        <Pricing onStartTrial={handleStartTrial} />
+        <Pricing onStartTrial={handleSignupClick} />
       </section>
 
       {/* Demo Section */}
       <section id="demo">
-        <DemoSection onStartTrial={handleStartTrial} />
+        <DemoSection onStartTrial={handleSignupClick} />
       </section>
 
       {/* Security & Trust Section */}
@@ -326,7 +496,7 @@ const Index = () => {
                 size="lg" 
                 variant="secondary" 
                 className="text-lg px-8 py-6"
-                onClick={handleStartTrial}
+                onClick={handleSignupClick}
               >
                 Start Your Free Trial Now
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -335,7 +505,7 @@ const Index = () => {
                 size="lg" 
                 variant="outline" 
                 className="text-lg px-8 py-6 border-white/20 text-black hover:bg-white/10"
-                onClick={() => scrollToSection('contact')}
+                onClick={() => navigate('/#contact')}
               >
                 Get in Touch
               </Button>
@@ -354,13 +524,11 @@ const Index = () => {
 
       {/* Tenant Creation Modal */}
       <TenantCreationModal
-        isOpen={isSignupModalOpen}
-        onClose={handleCloseSignupModal}
+        isOpen={false} // This modal is now handled by UnifiedSignup
+        onClose={() => {}}
       />
 
       <Footer />
     </div>
   );
-};
-
-export default Index;
+}
