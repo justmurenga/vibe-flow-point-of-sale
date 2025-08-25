@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,14 +32,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
-// Schema definitions
+// Schema definitions - REMOVE description field since it doesn't exist in database
 const paymentMethodSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["cash", "card", "mobile_money", "bank_transfer", "crypto", "other"]),
   account_id: z.string().uuid("Please select an accounting account").min(1, "Asset account is required"),
   is_active: z.boolean().default(true),
   requires_reference: z.boolean().default(false),
-  description: z.string().optional(),
+  // Remove description field - it doesn't exist in payment_methods table
   processing_fee_percentage: z.number().min(0).max(100).optional(),
   minimum_amount: z.number().min(0).optional(),
   maximum_amount: z.number().min(0).optional(),
@@ -68,7 +68,7 @@ interface PaymentMethod {
   account_code?: string;
   is_active: boolean;
   requires_reference: boolean;
-  description?: string;
+  // Remove description field
   processing_fee_percentage?: number;
   minimum_amount?: number;
   maximum_amount?: number;
@@ -296,7 +296,7 @@ export function PaymentManagement() {
         account_id: values.account_id,
         is_active: values.is_active,
         requires_reference: values.requires_reference,
-        description: values.description || null,
+        // Remove description field
         processing_fee_percentage: values.processing_fee_percentage || null,
         minimum_amount: values.minimum_amount || null,
         maximum_amount: values.maximum_amount || null,
@@ -474,7 +474,7 @@ export function PaymentManagement() {
         account_id: method.account_id || '',
         is_active: method.is_active,
         requires_reference: method.requires_reference,
-        description: method.description || '',
+        // Remove description field
         processing_fee_percentage: method.processing_fee_percentage || 0,
         minimum_amount: method.minimum_amount || 0,
         maximum_amount: method.maximum_amount || undefined,
@@ -484,6 +484,91 @@ export function PaymentManagement() {
       methodForm.reset();
     }
     setShowMethodDialog(true);
+  };
+
+  const handleSubmitMethod = async (values: z.infer<typeof paymentMethodSchema>) => {
+    try {
+      if (!tenantId) {
+        toast({
+          title: 'Error',
+          description: 'No tenant ID available',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validate that account_id is selected
+      if (!values.account_id) {
+        toast({
+          title: 'Error',
+          description: 'Please select an asset account for this payment method',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const methodData = {
+        name: values.name,
+        type: values.type,
+        account_id: values.account_id,
+        is_active: values.is_active,
+        requires_reference: values.requires_reference,
+        // Remove description field
+        processing_fee_percentage: values.processing_fee_percentage,
+        minimum_amount: values.minimum_amount,
+        maximum_amount: values.maximum_amount,
+        tenant_id: tenantId,
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingMethod) {
+        // Update existing method
+        const { error } = await supabase
+          .from('payment_methods')
+          .update(methodData)
+          .eq('id', editingMethod.id)
+          .eq('tenant_id', tenantId);
+
+        if (error) throw error;
+
+        setPaymentMethods(prev => 
+          prev.map(m => m.id === editingMethod.id ? { ...m, ...methodData } : m)
+        );
+
+        toast({
+          title: 'Success',
+          description: 'Payment method updated successfully',
+        });
+      } else {
+        // Create new method
+        const { data, error } = await supabase
+          .from('payment_methods')
+          .insert({
+            ...methodData,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setPaymentMethods(prev => [...prev, data]);
+        toast({
+          title: 'Success',
+          description: 'Payment method created successfully',
+        });
+      }
+
+      setShowMethodDialog(false);
+      await fetchPaymentMethods(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving payment method:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save payment method',
+        variant: 'destructive',
+      });
+    }
   };
 
   const openIntegrationDialog = (integration?: PaymentIntegration) => {
@@ -663,18 +748,22 @@ export function PaymentManagement() {
 
       {/* Payment Method Dialog */}
       <Dialog open={showMethodDialog} onOpenChange={setShowMethodDialog}>
-        <DialogContent className="max-w-2xl" aria-describedby="payment-method-description">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          aria-describedby="payment-method-dialog-description"
+        >
           <DialogHeader>
             <DialogTitle>
-              {editingMethod ? 'Edit' : 'Add'} Payment Method
+              {editingMethod ? 'Edit Payment Method' : 'Add Payment Method'}
             </DialogTitle>
-            <p id="payment-method-description" className="text-sm text-muted-foreground">
-              Configure payment methods and link them to accounting asset accounts for proper financial tracking.
-            </p>
+            <DialogDescription id="payment-method-dialog-description">
+              Configure payment method settings and link to accounting asset accounts.
+            </DialogDescription>
           </DialogHeader>
+          
           <Form {...methodForm}>
-            <form onSubmit={methodForm.handleSubmit(handleSavePaymentMethod)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={methodForm.handleSubmit(handleSubmitMethod)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={methodForm.control}
                   name="name"
@@ -742,20 +831,6 @@ export function PaymentManagement() {
                     <p className="text-xs text-muted-foreground">
                       This account will be used for accounting transactions when this payment method is used
                     </p>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={methodForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Additional details about this payment method" />
-                    </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -848,8 +923,8 @@ export function PaymentManagement() {
                 <Button type="button" variant="outline" onClick={() => setShowMethodDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingMethod ? 'Update' : 'Create'} Method
+                <Button type="submit" disabled={methodForm.formState.isSubmitting}>
+                  {methodForm.formState.isSubmitting ? 'Saving...' : (editingMethod ? 'Update' : 'Create')}
                 </Button>
               </div>
             </form>
@@ -859,14 +934,17 @@ export function PaymentManagement() {
 
       {/* Integration Dialog */}
       <Dialog open={showIntegrationDialog} onOpenChange={setShowIntegrationDialog}>
-        <DialogContent className="max-w-2xl" aria-describedby="payment-integration-description">
+        <DialogContent 
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          aria-describedby="payment-integration-dialog-description"
+        >
           <DialogHeader>
             <DialogTitle>
-              {editingIntegration ? 'Edit' : 'Add'} Payment Integration
+              {editingIntegration ? 'Edit Payment Integration' : 'Add Payment Integration'}
             </DialogTitle>
-            <p id="payment-integration-description" className="text-sm text-muted-foreground">
-              Configure payment gateway integrations and API settings for online payment processing.
-            </p>
+            <DialogDescription id="payment-integration-dialog-description">
+              Configure payment gateway integrations and API settings.
+            </DialogDescription>
           </DialogHeader>
           <Form {...integrationForm}>
             <form onSubmit={integrationForm.handleSubmit(handleSaveIntegration)} className="space-y-4">
