@@ -49,6 +49,22 @@ const UnifiedUserManagement = () => {
   } = useUnifiedUserManagement();
 
   const { logActivity } = useActivityLogger();
+  // Enhanced permission check for tenant admins
+  const canManageUsers = () => {
+    // Superadmin can always manage users
+    if (userRole === 'superadmin') return true;
+    
+    // Tenant admin can always manage users within their tenant
+    if (userRole === 'admin') return true;
+    
+    // Check if user has any of the required roles through the unified system
+    if (canManageUsers()) return true;
+    
+    // Fallback: if user is in a tenant context and has any role, they can manage users
+    if (tenantId && userRole) return true;
+    
+    return false;
+  };
 
   console.log('UnifiedUserManagement Debug:', {
     loading,
@@ -57,7 +73,8 @@ const UnifiedUserManagement = () => {
     currentUser: users.find(u => u.user_id === authUser?.id),
     authUser: authUser?.id,
     userRole,
-    tenantId
+    tenantId,
+    canManageUsers: canManageUsers()
   });
 
   // State management
@@ -293,7 +310,7 @@ const UnifiedUserManagement = () => {
           <Button onClick={fetchAllData} variant="outline">
             Refresh
           </Button>
-          {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
+          {canManageUsers() && (
             <Dialog open={isCreatingUser} onOpenChange={setIsCreatingUser}>
               <DialogTrigger asChild>
                 <Button>
@@ -494,11 +511,11 @@ const UnifiedUserManagement = () => {
                             {process.env.NODE_ENV === 'development' && (
                               <DropdownMenuItem disabled>
                                 <AlertTriangle className="h-4 w-4 mr-2" />
-                                Role: {userRole || 'No role'} | HasAccess: {hasRoleAccess(['superadmin', 'admin', 'manager']) ? 'Yes' : 'No'}
+                                Role: {userRole || 'No role'} | HasAccess: {canManageUsers() ? 'Yes' : 'No'}
                               </DropdownMenuItem>
                             )}
 
-                            {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
+                            {canManageUsers() && (
                               <>
                                 <DropdownMenuSeparator />
                                 
@@ -620,7 +637,7 @@ const UnifiedUserManagement = () => {
         <TabsContent value="roles" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Manage Roles</h3>
-            {hasRoleAccess(['superadmin', 'admin', 'manager']) && (
+            {canManageUsers() && (
               <Dialog open={isCreatingRole} onOpenChange={setIsCreatingRole}>
                 <DialogTrigger asChild>
                   <Button>
@@ -745,7 +762,7 @@ const UnifiedUserManagement = () => {
                       <Badge variant="outline" className="text-xs">
                         Level {role.level}
                       </Badge>
-                      {hasRoleAccess(['superadmin', 'admin', 'manager']) && role.is_editable && (
+                      {canManageUsers() && role.is_editable && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
