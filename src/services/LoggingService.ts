@@ -230,26 +230,3 @@ export class LoggingService {
     this.flushLogs();
   }
 }
-
-// React hook for logging
-export function useLogging() {
-  const logger = LoggingService.getInstance();
-
-  const log = (
-    level: LogLevel,
-    category: LogCategory,
-    message: string,
-    context?: Record<string, any>
-  ) => {
-    logger.log(level, category, message, context || {});
-  };
-
-  const time = (
-    category: LogCategory,
-    operation: string
-  ) => {
-    return logger.time(category, operation);
-  };
-
-  return { log, time, logger };
-}
