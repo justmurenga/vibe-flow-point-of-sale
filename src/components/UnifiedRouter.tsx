@@ -6,30 +6,30 @@ import { navigationService } from '@/services/NavigationService';
 import { useToast } from '@/hooks/use-toast';
 
 // Import all components
-import { LandingPage } from '@/pages/LandingPage';
-import { Demo } from '@/pages/Demo';
-import { Auth } from '@/pages/Auth';
+import LandingPage from '@/pages/LandingPage';
+import Demo from '@/pages/Demo';
+import Auth from '@/pages/Auth';
 import { UnifiedAuthCallback } from '@/components/UnifiedAuthCallback';
 import { UnifiedSignup } from '@/components/UnifiedSignup';
 import { UnifiedUserInvitation } from '@/components/UnifiedUserInvitation';
-import { ResetPassword } from '@/pages/ResetPassword';
-import { VerifyEmail } from '@/pages/VerifyEmail';
-import { ForgotPassword } from '@/pages/ForgotPassword';
-import { Success } from '@/pages/Success';
-import { PrivacyPolicy } from '@/pages/PrivacyPolicy';
-import { TermsOfService } from '@/pages/TermsOfService';
+import ResetPassword from '@/pages/ResetPassword';
+import VerifyEmail from '@/pages/VerifyEmail';
+import ForgotPassword from '@/pages/ForgotPassword';
+import Success from '@/pages/Success';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TermsOfService from '@/pages/TermsOfService';
 import { SuperAdminLayout } from '@/components/SuperAdminLayout';
-import { SuperAdminDashboard } from '@/pages/SuperAdminDashboard';
-import { TenantManagement } from '@/pages/TenantManagement';
-import { SuperAdminUserManagement } from '@/pages/SuperAdminUserManagement';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
+import TenantManagement from '@/pages/TenantManagement';
+import SuperAdminUserManagement from '@/pages/SuperAdminUserManagement';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { AppProvider } from '@/contexts/AppContext';
 import { TenantSetupCompletion } from '@/components/TenantSetupCompletion';
-import { Sales } from '@/pages/Sales';
-import { StockManagement } from '@/pages/StockManagement';
-import { Customers } from '@/pages/Customers';
-import { Reports } from '@/pages/Reports';
-import { Settings } from '@/pages/Settings';
+import Sales from '@/pages/Sales';
+import StockManagement from '@/pages/StockManagement';
+import Customers from '@/pages/Customers';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
 import { PageLoader } from '@/components/PageLoader';
 
 interface UnifiedRouterProps {
