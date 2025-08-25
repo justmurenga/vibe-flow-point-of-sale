@@ -103,11 +103,13 @@ export class NavigationService {
     try {
       const subdomain = domain.split('.')[0];
       
+      console.log('🔍 [NAVIGATION] Looking for tenant with subdomain:', subdomain);
+      
       const { data: tenant, error } = await supabase
         .from('tenants')
-        .select('id')
+        .select('id, name, status')
         .eq('subdomain', subdomain)
-        .eq('status', 'active')
+        .in('status', ['active', 'trial']) // Include both active and trial tenants
         .maybeSingle();
 
       if (error) {
@@ -115,7 +117,13 @@ export class NavigationService {
         return null;
       }
 
-      return tenant?.id || null;
+      if (tenant) {
+        console.log('✅ [NAVIGATION] Found tenant:', tenant.name, 'with status:', tenant.status);
+        return tenant.id;
+      } else {
+        console.log('❌ [NAVIGATION] No tenant found for subdomain:', subdomain);
+        return null;
+      }
     } catch (error) {
       console.error('Error getting tenant from subdomain:', error);
       return null;
@@ -281,14 +289,18 @@ export class NavigationService {
       return { valid: true };
     }
 
+    console.log(' [NAVIGATION] Validating subdomain access for:', this.getCurrentDomain());
+    
     const tenantId = await this.getTenantFromSubdomain();
     if (!tenantId) {
+      console.log('❌ [NAVIGATION] Subdomain validation failed - no tenant found');
       return { 
         valid: false, 
         error: 'This business workspace does not exist. Please check the URL or sign up on our main website.' 
       };
     }
 
+    console.log('✅ [NAVIGATION] Subdomain validation successful for tenant:', tenantId);
     return { valid: true };
   }
 

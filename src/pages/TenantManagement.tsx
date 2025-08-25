@@ -20,6 +20,7 @@ import TenantCustomPricing from '@/components/TenantCustomPricing';
 import { getBaseDomain } from '@/lib/domain-manager';
 import { useUnifiedCommunication } from '@/hooks/useUnifiedCommunication';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 
 type Tenant = Tables<'tenants'>;
 type TenantUser = Tables<'tenant_users'>;
@@ -806,508 +807,505 @@ export default function TenantManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <DashboardHeader />
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tenant Management</h1>
-          <p className="text-muted-foreground">Manage tenants and their configurations</p>
-        </div>
-        
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Tenants</CardTitle>
-          <CardDescription>
-            {tenants.length} tenant{tenants.length !== 1 ? 's' : ''} total
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Subdomain</TableHead>
-                <TableHead>Current Plan</TableHead>
-                <TableHead>Subscription Status</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Created By</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tenants.map((tenant) => {
-                const subscription = tenantSubscriptions.find(sub => sub.tenant_id === tenant.id);
-                
-                return (
-                  <TableRow key={tenant.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-primary" />
-                        <span className="font-medium">{tenant.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const subdomain = (tenant as any).tenant_domains?.find((d: any) => d.domain_type === 'subdomain')?.domain_name;
-                        return subdomain ? (
-                          <span className="text-sm text-muted-foreground">{subdomain}</span>
-                        ) : tenant.subdomain ? (
-                          <span className="text-sm text-muted-foreground">{tenant.subdomain}.{getBaseDomain()}</span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        );
-                      })()}
-                    </TableCell>
-                     <TableCell>
-                       {subscription?.billing_plans ? (
-                         <CompactPlanDisplay 
-                           subscription={subscription} 
-                           tenantId={tenant.id}
-                         />
-                       ) : (
-                         <span className="text-sm text-muted-foreground">No Plan</span>
-                       )}
-                     </TableCell>
-                    <TableCell>
-                      {subscription ? (
-                        <Badge variant={subscription.status === 'active' ? "default" : "secondary"}>
-                          {subscription.status === 'active' ? 'Active' : subscription.status}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">No Subscription</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {tenant.contact_email ? (
-                        <span className="text-sm">{tenant.contact_email}</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {tenant.country ? (
-                        <span className="text-sm">{tenant.country}</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {(tenant as any).created_by_profile?.full_name ? (
-                        <span className="text-sm">{(tenant as any).created_by_profile.full_name}</span>
-                      ) : tenant.created_by ? (
-                        <span className="text-sm text-muted-foreground">User (ID: {tenant.created_by.slice(0, 8)}...)</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">System/SuperAdmin</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {new Date(tenant.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={tenant.is_active ? "default" : "secondary"}>
-                        {tenant.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openSubscriptionDialog(tenant)}
-                        >
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          {subscription ? 'Manage Plan' : 'Add Plan'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openUsersDialog(tenant)}
-                        >
-                          <Users className="h-4 w-4 mr-1" />
-                          Users
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCustomPricingDialog(tenant)}
-                        >
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Custom Pricing
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => sendWelcomeEmailToTenant(tenant)}
-                          disabled={!tenant.contact_email}
-                        >
-                          <Mail className="h-4 w-4 mr-1" />
-                          Welcome Email
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleTenantStatus(tenant)}
-                        >
-                          <Settings className="h-4 w-4 mr-1" />
-                          {tenant.is_active ? 'Deactivate' : 'Activate'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openManualPaymentDialog(tenant, subscription?.billing_plan_id)}
-                        >
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          Record Payment
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Manage Users - {selectedTenant?.name}</DialogTitle>
-            <DialogDescription>
-              View and manage users for this tenant
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {tenantUsers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No users found for this tenant</p>
-            ) : (
-              <div className="space-y-2">
-                {tenantUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">User ID: {user.user_id}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+    <SuperAdminLayout>
+      <div className="flex-1 space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Tenant Management</h1>
+            <p className="text-muted-foreground">Manage tenants and their configurations</p>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Subscription Management Dialog */}
-      <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Manage Subscription - {selectedTenant?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Upgrade, downgrade, or manage the subscription plan for this tenant
-            </DialogDescription>
-          </DialogHeader>
           
-          <div className="space-y-6">
-            {/* Current Plan Display with Custom Pricing */}
-            {selectedSubscription && (
-              <CurrentPlanDisplay 
-                subscription={selectedSubscription} 
-                tenantId={selectedTenant?.id}
-              />
-            )}
-            
-            {/* Available Plans */}
-            <div>
-              <h3 className="font-semibold mb-4">
-                {selectedSubscription ? 'Change Plan' : 'Select Plan'}
-              </h3>
-              <div className="grid gap-4">
-                {billingPlans.map((plan) => {
-                  const isCurrentPlan = selectedSubscription?.billing_plan_id === plan.id;
-                  const currentPlanPrice = selectedSubscription?.billing_plans?.price || 0;
-                  const isUpgrade = plan.price > currentPlanPrice;
-                  const isDowngrade = plan.price < currentPlanPrice;
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>All Tenants</CardTitle>
+            <CardDescription>
+              {tenants.length} tenant{tenants.length !== 1 ? 's' : ''} total
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Subdomain</TableHead>
+                  <TableHead>Current Plan</TableHead>
+                  <TableHead>Subscription Status</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Country</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tenants.map((tenant) => {
+                  const subscription = tenantSubscriptions.find(sub => sub.tenant_id === tenant.id);
                   
                   return (
-                    <div
-                      key={plan.id}
-                      className={`p-4 border rounded-lg transition-all ${
-                        isCurrentPlan 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge className={plan.badge_color}>
-                            {plan.badge}
+                    <TableRow key={tenant.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Building2 className="h-4 w-4 text-primary" />
+                          <span className="font-medium">{tenant.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const subdomain = (tenant as any).tenant_domains?.find((d: any) => d.domain_type === 'subdomain')?.domain_name;
+                          return subdomain ? (
+                            <span className="text-sm text-muted-foreground">{subdomain}</span>
+                          ) : tenant.subdomain ? (
+                            <span className="text-sm text-muted-foreground">{tenant.subdomain}.{getBaseDomain()}</span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          );
+                        })()}
+                      </TableCell>
+                       <TableCell>
+                         {subscription?.billing_plans ? (
+                           <CompactPlanDisplay 
+                             subscription={subscription} 
+                             tenantId={tenant.id}
+                           />
+                         ) : (
+                           <span className="text-sm text-muted-foreground">No Plan</span>
+                         )}
+                       </TableCell>
+                      <TableCell>
+                        {subscription ? (
+                          <Badge variant={subscription.status === 'active' ? "default" : "secondary"}>
+                            {subscription.status === 'active' ? 'Active' : subscription.status}
                           </Badge>
-                          <div>
-                            <h4 className="font-medium flex items-center gap-2">
-                              {plan.name}
-                              {isCurrentPlan && (
-                                <Badge variant="outline" className="text-xs">
-                                  Current
-                                </Badge>
-                              )}
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              {currency.symbol} {plan.price.toLocaleString()} per {plan.period}
-                            </p>
-                            {plan.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {plan.description}
+                        ) : (
+                          <Badge variant="outline">No Subscription</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {tenant.contact_email ? (
+                          <span className="text-sm">{tenant.contact_email}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {tenant.country ? (
+                          <span className="text-sm">{tenant.country}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(tenant as any).created_by_profile?.full_name ? (
+                          <span className="text-sm">{(tenant as any).created_by_profile.full_name}</span>
+                        ) : tenant.created_by ? (
+                          <span className="text-sm text-muted-foreground">User (ID: {tenant.created_by.slice(0, 8)}...)</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">System/SuperAdmin</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm">
+                          {new Date(tenant.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={tenant.is_active ? "default" : "secondary"}>
+                          {tenant.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openSubscriptionDialog(tenant)}
+                          >
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            {subscription ? 'Manage Plan' : 'Add Plan'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openUsersDialog(tenant)}
+                          >
+                            <Users className="h-4 w-4 mr-1" />
+                            Users
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openCustomPricingDialog(tenant)}
+                          >
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            Custom Pricing
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => sendWelcomeEmailToTenant(tenant)}
+                            disabled={!tenant.contact_email}
+                          >
+                            <Mail className="h-4 w-4 mr-1" />
+                            Welcome Email
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleTenantStatus(tenant)}
+                          >
+                            <Settings className="h-4 w-4 mr-1" />
+                            {tenant.is_active ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openManualPaymentDialog(tenant, subscription?.billing_plan_id)}
+                          >
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            Record Payment
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Dialog open={usersDialogOpen} onOpenChange={setUsersDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Manage Users - {selectedTenant?.name}</DialogTitle>
+              <DialogDescription>
+                View and manage users for this tenant
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {tenantUsers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No users found for this tenant</p>
+              ) : (
+                <div className="space-y-2">
+                  {tenantUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">User ID: {user.user_id}</p>
+                        <p className="text-sm text-muted-foreground capitalize">{user.role}</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Subscription Management Dialog */}
+        <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Manage Subscription - {selectedTenant?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Upgrade, downgrade, or manage the subscription plan for this tenant
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Current Plan Display with Custom Pricing */}
+              {selectedSubscription && (
+                <CurrentPlanDisplay 
+                  subscription={selectedSubscription} 
+                  tenantId={selectedTenant?.id}
+                />
+              )}
+              
+              {/* Available Plans */}
+              <div>
+                <h3 className="font-semibold mb-4">
+                  {selectedSubscription ? 'Change Plan' : 'Select Plan'}
+                </h3>
+                <div className="grid gap-4">
+                  {billingPlans.map((plan) => {
+                    const isCurrentPlan = selectedSubscription?.billing_plan_id === plan.id;
+                    const currentPlanPrice = selectedSubscription?.billing_plans?.price || 0;
+                    const isUpgrade = plan.price > currentPlanPrice;
+                    const isDowngrade = plan.price < currentPlanPrice;
+                    
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`p-4 border rounded-lg transition-all ${
+                          isCurrentPlan 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge className={plan.badge_color}>
+                              {plan.badge}
+                            </Badge>
+                            <div>
+                              <h4 className="font-medium flex items-center gap-2">
+                                {plan.name}
+                                {isCurrentPlan && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Current
+                                  </Badge>
+                                )}
+                              </h4>
+                              <p className="text-sm text-muted-foreground">
+                                {currency.symbol} {plan.price.toLocaleString()} per {plan.period}
                               </p>
+                              {plan.description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {plan.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {selectedSubscription && !isCurrentPlan && (
+                              <div className="text-right mr-3">
+                                {isUpgrade && (
+                                  <div className="flex items-center gap-1 text-green-600">
+                                    <ArrowUpCircle className="h-4 w-4" />
+                                    <span className="text-xs">Upgrade</span>
+                                  </div>
+                                )}
+                                {isDowngrade && (
+                                  <div className="flex items-center gap-1 text-orange-600">
+                                    <ArrowDownCircle className="h-4 w-4" />
+                                    <span className="text-xs">Downgrade</span>
+                                  </div>
+                                )}
+                              </div>
                             )}
+                            
+                            <Button
+                              variant={isCurrentPlan ? "secondary" : "outline"}
+                              size="sm"
+                              disabled={isCurrentPlan || subscriptionLoading}
+                              onClick={() => selectedTenant && updateSubscription(selectedTenant.id, plan.id)}
+                            >
+                              {subscriptionLoading ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : isCurrentPlan ? (
+                                'Current Plan'
+                              ) : selectedSubscription ? (
+                                isUpgrade ? 'Upgrade' : 'Downgrade'
+                              ) : (
+                                'Select Plan'
+                              )}
+                            </Button>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
-                          {selectedSubscription && !isCurrentPlan && (
-                            <div className="text-right mr-3">
-                              {isUpgrade && (
-                                <div className="flex items-center gap-1 text-green-600">
-                                  <ArrowUpCircle className="h-4 w-4" />
-                                  <span className="text-xs">Upgrade</span>
+                        {/* Plan Features */}
+                        {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <div className="grid grid-cols-2 gap-2">
+                              {(plan.features as any[]).slice(0, 6).map((feature, index) => (
+                                <div key={index} className="flex items-center gap-2 text-xs">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    feature.included ? 'bg-green-500' : 'bg-gray-300'
+                                  }`} />
+                                  <span className={feature.included ? 'text-foreground' : 'text-muted-foreground'}>
+                                    {feature.name}
+                                    {feature.limit && feature.limit !== 'unlimited' && ` (${feature.limit})`}
+                                  </span>
                                 </div>
-                              )}
-                              {isDowngrade && (
-                                <div className="flex items-center gap-1 text-orange-600">
-                                  <ArrowDownCircle className="h-4 w-4" />
-                                  <span className="text-xs">Downgrade</span>
-                                </div>
-                              )}
+                              ))}
                             </div>
-                          )}
-                          
-                          <Button
-                            variant={isCurrentPlan ? "secondary" : "outline"}
-                            size="sm"
-                            disabled={isCurrentPlan || subscriptionLoading}
-                            onClick={() => selectedTenant && updateSubscription(selectedTenant.id, plan.id)}
-                          >
-                            {subscriptionLoading ? (
-                              <RefreshCw className="h-4 w-4 animate-spin" />
-                            ) : isCurrentPlan ? (
-                              'Current Plan'
-                            ) : selectedSubscription ? (
-                              isUpgrade ? 'Upgrade' : 'Downgrade'
-                            ) : (
-                              'Select Plan'
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Plan Features */}
-                      {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-border/50">
-                          <div className="grid grid-cols-2 gap-2">
-                            {(plan.features as any[]).slice(0, 6).map((feature, index) => (
-                              <div key={index} className="flex items-center gap-2 text-xs">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  feature.included ? 'bg-green-500' : 'bg-gray-300'
-                                }`} />
-                                <span className={feature.included ? 'text-foreground' : 'text-muted-foreground'}>
-                                  {feature.name}
-                                  {feature.limit && feature.limit !== 'unlimited' && ` (${feature.limit})`}
-                                </span>
-                              </div>
-                            ))}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Notes */}
+              <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium mb-1">Important Notes:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Plan changes take effect immediately</li>
+                  <li>Upgrades will be prorated for the current billing period</li>
+                  <li>Downgrades will apply at the next billing cycle</li>
+                  <li>All plan changes will be reflected in the next invoice</li>
+                </ul>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manual Payment Dialog */}
+        <Dialog open={manualPaymentDialogOpen} onOpenChange={setManualPaymentDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Record Manual Payment - {selectedTenant?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Capture a manual payment for this tenant. A unique reference is required.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={manualPayment.amount}
+                    onChange={(e) => setManualPayment((p) => ({ ...p, amount: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={manualPayment.currency} onValueChange={(v) => setManualPayment((p) => ({ ...p, currency: v }))}>
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
+                      <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">Payment Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={manualPayment.paymentDate}
+                    onChange={(e) => setManualPayment((p) => ({ ...p, paymentDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="method">Method</Label>
+                  <Select value={manualPayment.method} onValueChange={(v) => setManualPayment((p) => ({ ...p, method: v }))}>
+                    <SelectTrigger id="method">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                      <SelectItem value="mpesa">M-Pesa</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="reference">Payment Reference</Label>
+                  <Input
+                    id="reference"
+                    placeholder="Enter unique reference"
+                    value={manualPayment.reference}
+                    onChange={(e) => setManualPayment((p) => ({ ...p, reference: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="plan">Billing Plan (optional)</Label>
+                  <Select value={manualPayment.planId} onValueChange={(v) => setManualPayment((p) => ({ ...p, planId: v }))}>
+                    <SelectTrigger id="plan">
+                      <SelectValue placeholder="Select plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {billingPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">Send Receipt To</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={selectedTenant?.contact_email || 'client@example.com'}
+                    value={manualPayment.email}
+                    onChange={(e) => setManualPayment((p) => ({ ...p, email: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Optional notes"
+                    value={manualPayment.notes}
+                    onChange={(e) => setManualPayment((p) => ({ ...p, notes: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setManualPaymentDialogOpen(false)} disabled={savingManualPayment}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveManualPayment} disabled={savingManualPayment}>
+                  {savingManualPayment && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+                  Save Payment
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Custom Pricing Dialog */}
+        <Dialog open={customPricingDialogOpen} onOpenChange={setCustomPricingDialogOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Custom Pricing - {selectedTenant?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Manage custom pricing overrides for this tenant
+              </DialogDescription>
+            </DialogHeader>
             
-            {/* Notes */}
-            <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
-              <p className="font-medium mb-1">Important Notes:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>Plan changes take effect immediately</li>
-                <li>Upgrades will be prorated for the current billing period</li>
-                <li>Downgrades will apply at the next billing cycle</li>
-                <li>All plan changes will be reflected in the next invoice</li>
-              </ul>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Manual Payment Dialog */}
-      <Dialog open={manualPaymentDialogOpen} onOpenChange={setManualPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Record Manual Payment - {selectedTenant?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Capture a manual payment for this tenant. A unique reference is required.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={manualPayment.amount}
-                  onChange={(e) => setManualPayment((p) => ({ ...p, amount: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency">Currency</Label>
-                <Select value={manualPayment.currency} onValueChange={(v) => setManualPayment((p) => ({ ...p, currency: v }))}>
-                  <SelectTrigger id="currency">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
-                    <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="date">Payment Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={manualPayment.paymentDate}
-                  onChange={(e) => setManualPayment((p) => ({ ...p, paymentDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="method">Method</Label>
-                <Select value={manualPayment.method} onValueChange={(v) => setManualPayment((p) => ({ ...p, method: v }))}>
-                  <SelectTrigger id="method">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="mpesa">M-Pesa</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="reference">Payment Reference</Label>
-                <Input
-                  id="reference"
-                  placeholder="Enter unique reference"
-                  value={manualPayment.reference}
-                  onChange={(e) => setManualPayment((p) => ({ ...p, reference: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="plan">Billing Plan (optional)</Label>
-                <Select value={manualPayment.planId} onValueChange={(v) => setManualPayment((p) => ({ ...p, planId: v }))}>
-                  <SelectTrigger id="plan">
-                    <SelectValue placeholder="Select plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {billingPlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="email">Send Receipt To</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={selectedTenant?.contact_email || 'client@example.com'}
-                  value={manualPayment.email}
-                  onChange={(e) => setManualPayment((p) => ({ ...p, email: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Optional notes"
-                  value={manualPayment.notes}
-                  onChange={(e) => setManualPayment((p) => ({ ...p, notes: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setManualPaymentDialogOpen(false)} disabled={savingManualPayment}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveManualPayment} disabled={savingManualPayment}>
-                {savingManualPayment && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-                Save Payment
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Custom Pricing Dialog */}
-      <Dialog open={customPricingDialogOpen} onOpenChange={setCustomPricingDialogOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Custom Pricing - {selectedTenant?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Manage custom pricing overrides for this tenant
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedTenant && (
-            <TenantCustomPricing 
-              tenantId={selectedTenant.id} 
-              tenantName={selectedTenant.name}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-        </div>
+            {selectedTenant && (
+              <TenantCustomPricing 
+                tenantId={selectedTenant.id} 
+                tenantName={selectedTenant.name}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
+    </SuperAdminLayout>
   );
 }

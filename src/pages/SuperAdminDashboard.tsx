@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
+import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 
 export default function SuperAdminDashboard() {
   const { user, userRole } = useAuth();
@@ -174,7 +175,8 @@ export default function SuperAdminDashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <SuperAdminLayout>
+      <div className="flex-1 space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="space-y-1">
@@ -279,6 +281,7 @@ export default function SuperAdminDashboard() {
             </CardContent>
           </Card>
         </div>
-    </div>
+      </div>
+    </SuperAdminLayout>
   );
 }

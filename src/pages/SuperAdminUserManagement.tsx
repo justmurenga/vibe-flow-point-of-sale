@@ -32,6 +32,7 @@ import {
   Ban
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 
 interface User {
   id: string;
@@ -355,304 +356,306 @@ const SuperAdminUserManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-yellow-500" />
-            <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+    <SuperAdminLayout>
+      <div className="flex-1 space-y-6 p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Crown className="h-6 w-6 text-yellow-500" />
+              <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+            </div>
+            <p className="text-muted-foreground">Manage users across all tenants</p>
           </div>
-          <p className="text-muted-foreground">Manage users across all tenants</p>
+          <Button onClick={loadData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
-        <Button onClick={loadData}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {userStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {userStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="users">All Users</TabsTrigger>
+            <TabsTrigger value="activity">Activity Logs</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-6">
+            {/* Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filters</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <Label htmlFor="search">Search Users</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder="Search by name or tenant..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-full sm:w-48">
+                    <Label htmlFor="tenant">Tenant</Label>
+                    <Select value={selectedTenant} onValueChange={setSelectedTenant}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Tenants" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tenants</SelectItem>
+                        {tenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-full sm:w-48">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Roles" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="superadmin">Super Admin</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        <SelectItem value="cashier">Cashier</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="users">All Users</TabsTrigger>
-          <TabsTrigger value="activity">Activity Logs</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="users" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="search">Search Users</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="search"
-                      placeholder="Search by name or tenant..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="w-full sm:w-48">
-                  <Label htmlFor="tenant">Tenant</Label>
-                  <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Tenants" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Tenants</SelectItem>
-                      {tenants.map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-full sm:w-48">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Roles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="superadmin">Super Admin</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="cashier">Cashier</SelectItem>
-                      <SelectItem value="user">User</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Users Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Users ({filteredUsers.length})</CardTitle>
-              <CardDescription>All users across the platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Tenant</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                       <TableCell>
-                         <div>
-                           <div className="font-medium">{user.full_name || 'Unknown User'}</div>
-                           <div className="text-sm text-muted-foreground">{user.email || user.user_id}</div>
-                           {user.last_sign_in_at && (
-                             <div className="text-xs text-muted-foreground">
-                               Last active: {new Date(user.last_sign_in_at).toLocaleDateString()}
-                             </div>
-                           )}
-                         </div>
-                       </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)} className={getRoleColor(user.role)}>
-                          {user.role === 'superadmin' && <Crown className="h-3 w-3 mr-1" />}
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                       <TableCell>
-                         <div>
-                           <div>{user.tenant_name || 'No Tenant'}</div>
-                           {user.tenant_status && (
-                             <Badge variant="outline" className="text-xs">
-                               {user.tenant_status}
-                             </Badge>
-                           )}
-                         </div>
-                       </TableCell>
-                      <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsViewUserOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => toggleUserRole(user.user_id, user.role)}
-                              className={user.role === 'superadmin' ? 'text-yellow-600' : 'text-blue-600'}
-                            >
-                              <Shield className="h-4 w-4 mr-2" />
-                              {user.role === 'superadmin' ? 'Remove Admin' : 'Make Admin'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => deactivateUser(user.user_id)}
-                              className="text-red-600"
-                            >
-                              <Ban className="h-4 w-4 mr-2" />
-                              Deactivate
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+            {/* Users Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Users ({filteredUsers.length})</CardTitle>
+                <CardDescription>All users across the platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                         <TableCell>
+                           <div>
+                             <div className="font-medium">{user.full_name || 'Unknown User'}</div>
+                             <div className="text-sm text-muted-foreground">{user.email || user.user_id}</div>
+                             {user.last_sign_in_at && (
+                               <div className="text-xs text-muted-foreground">
+                                 Last active: {new Date(user.last_sign_in_at).toLocaleDateString()}
+                               </div>
+                             )}
+                           </div>
+                         </TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(user.role)} className={getRoleColor(user.role)}>
+                            {user.role === 'superadmin' && <Crown className="h-3 w-3 mr-1" />}
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                         <TableCell>
+                           <div>
+                             <div>{user.tenant_name || 'No Tenant'}</div>
+                             {user.tenant_status && (
+                               <Badge variant="outline" className="text-xs">
+                                 {user.tenant_status}
+                               </Badge>
+                             )}
+                           </div>
+                         </TableCell>
+                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsViewUserOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => toggleUserRole(user.user_id, user.role)}
+                                className={user.role === 'superadmin' ? 'text-yellow-600' : 'text-blue-600'}
+                              >
+                                <Shield className="h-4 w-4 mr-2" />
+                                {user.role === 'superadmin' ? 'Remove Admin' : 'Make Admin'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => deactivateUser(user.user_id)}
+                                className="text-red-600"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="activity" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Platform-wide user activity logs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Tenant</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>IP Address</TableHead>
-                  </TableRow>
-                </TableHeader>
-                 <TableBody>
-                   {activityLogs.slice(0, 100).map((log) => (
-                     <TableRow key={log.id}>
-                       <TableCell>
-                         <div>
-                           <div className="font-medium">{log.user_name}</div>
-                           {log.user_email && (
-                             <div className="text-sm text-muted-foreground">{log.user_email}</div>
-                           )}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         <div>
-                           <div className="font-medium capitalize">{log.action_type.replace('_', ' ')}</div>
-                           {log.resource_type && (
-                             <div className="text-sm text-muted-foreground capitalize">
-                               {log.resource_type.replace('_', ' ')}
-                             </div>
-                           )}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         <div>
-                           <div>{log.tenant_name}</div>
-                           {log.tenant_status && (
-                             <Badge variant="outline" className="text-xs">
-                               {log.tenant_status}
-                             </Badge>
-                           )}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         <div className="text-sm">
-                           {new Date(log.created_at).toLocaleString()}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         <div className="text-sm font-mono">
-                           {log.ip_address || '-'}
-                         </div>
-                       </TableCell>
-                     </TableRow>
-                   ))}
-                 </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="activity" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Platform-wide user activity logs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>IP Address</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                   <TableBody>
+                     {activityLogs.slice(0, 100).map((log) => (
+                       <TableRow key={log.id}>
+                         <TableCell>
+                           <div>
+                             <div className="font-medium">{log.user_name}</div>
+                             {log.user_email && (
+                               <div className="text-sm text-muted-foreground">{log.user_email}</div>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div>
+                             <div className="font-medium capitalize">{log.action_type.replace('_', ' ')}</div>
+                             {log.resource_type && (
+                               <div className="text-sm text-muted-foreground capitalize">
+                                 {log.resource_type.replace('_', ' ')}
+                               </div>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div>
+                             <div>{log.tenant_name}</div>
+                             {log.tenant_status && (
+                               <Badge variant="outline" className="text-xs">
+                                 {log.tenant_status}
+                               </Badge>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div className="text-sm">
+                             {new Date(log.created_at).toLocaleString()}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div className="text-sm font-mono">
+                             {log.ip_address || '-'}
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))}
+                   </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-      {/* User Details Dialog */}
-      <Dialog open={isViewUserOpen} onOpenChange={setIsViewUserOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about the selected user
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Full Name</Label>
-                  <p className="mt-1">{selectedUser.full_name || 'Not set'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Role</Label>
-                  <div className="mt-1">
-                    <Badge variant={getRoleBadgeVariant(selectedUser.role)}>
-                      {selectedUser.role}
-                    </Badge>
+        {/* User Details Dialog */}
+        <Dialog open={isViewUserOpen} onOpenChange={setIsViewUserOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>User Details</DialogTitle>
+              <DialogDescription>
+                Detailed information about the selected user
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Full Name</Label>
+                    <p className="mt-1">{selectedUser.full_name || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Role</Label>
+                    <div className="mt-1">
+                      <Badge variant={getRoleBadgeVariant(selectedUser.role)}>
+                        {selectedUser.role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">User ID</Label>
+                    <p className="mt-1 font-mono text-sm">{selectedUser.user_id}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Tenant</Label>
+                    <p className="mt-1">{selectedUser.tenant_name || 'No tenant assigned'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Created</Label>
+                    <p className="mt-1">{new Date(selectedUser.created_at).toLocaleString()}</p>
                   </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">User ID</Label>
-                  <p className="mt-1 font-mono text-sm">{selectedUser.user_id}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Tenant</Label>
-                  <p className="mt-1">{selectedUser.tenant_name || 'No tenant assigned'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Created</Label>
-                  <p className="mt-1">{new Date(selectedUser.created_at).toLocaleString()}</p>
-                </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </SuperAdminLayout>
   );
 };
 
