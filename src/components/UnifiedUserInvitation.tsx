@@ -120,7 +120,7 @@ export function UnifiedUserInvitation() {
         });
 
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/admin');
         }, 3000);
       } else {
         toast({
@@ -160,7 +160,7 @@ export function UnifiedUserInvitation() {
           </div>
           
           <Button 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/admin')}
             className="w-full"
           >
             Go to Dashboard

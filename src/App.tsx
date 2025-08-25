@@ -72,9 +72,11 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <Router>
             <AuthProvider>
-              <Suspense fallback={<PageLoader />}>
-                <UnifiedRouter />
-              </Suspense>
+              <AppProvider>
+                <Suspense fallback={<PageLoader />}>
+                  <UnifiedRouter />
+                </Suspense>
+              </AppProvider>
             </AuthProvider>
           </Router>
         </QueryClientProvider>

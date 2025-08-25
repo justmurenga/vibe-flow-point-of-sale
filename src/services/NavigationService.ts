@@ -25,7 +25,7 @@ export class NavigationService {
     developmentDomains: ['localhost', '127.0.0.1']
   };
 
-  // Route configurations
+  // Route configurations - simplified to avoid duplication with React Router
   private routes: Record<string, RouteConfig> = {
     // Public routes
     '/': { path: '/', requiresAuth: false, isPublic: true },
@@ -46,13 +46,13 @@ export class NavigationService {
     '/superadmin/tenants': { path: '/superadmin/tenants', requiresAuth: true, allowedRoles: ['superadmin'], isPublic: false },
     '/superadmin/users': { path: '/superadmin/users', requiresAuth: true, allowedRoles: ['superadmin'], isPublic: false },
     
-    // Protected routes
-    '/dashboard': { path: '/dashboard', requiresAuth: true, isPublic: false },
-    '/sales': { path: '/sales', requiresAuth: true, isPublic: false },
-    '/inventory': { path: '/inventory', requiresAuth: true, isPublic: false },
-    '/customers': { path: '/customers', requiresAuth: true, isPublic: false },
-    '/reports': { path: '/reports', requiresAuth: true, isPublic: false },
-    '/settings': { path: '/settings', requiresAuth: true, isPublic: false },
+    // Tenant admin routes - using /admin prefix
+    '/admin': { path: '/admin', requiresAuth: true, isPublic: false },
+    '/admin/products': { path: '/admin/products', requiresAuth: true, isPublic: false },
+    '/admin/sales': { path: '/admin/sales', requiresAuth: true, isPublic: false },
+    '/admin/customers': { path: '/admin/customers', requiresAuth: true, isPublic: false },
+    '/admin/reports': { path: '/admin/reports', requiresAuth: true, isPublic: false },
+    '/admin/settings': { path: '/admin/settings', requiresAuth: true, isPublic: false },
   };
 
   static getInstance(): NavigationService {
@@ -159,16 +159,16 @@ export class NavigationService {
       if (error) throw error;
 
       if (tenant?.subdomain) {
-        const tenantUrl = `https://${tenant.subdomain}.${this.config.mainDomain}/dashboard`;
+        const tenantUrl = `https://${tenant.subdomain}.${this.config.mainDomain}/admin`;
         window.location.href = tenantUrl;
       } else {
         // Fallback to main domain dashboard
-        window.location.href = `https://${this.config.mainDomain}/dashboard`;
+        window.location.href = `https://${this.config.mainDomain}/admin`;
       }
     } catch (error) {
       console.error('Error navigating to tenant:', error);
       // Fallback to main domain
-      window.location.href = `https://${this.config.mainDomain}/dashboard`;
+      window.location.href = `https://${this.config.mainDomain}/admin`;
     }
   }
 

@@ -65,7 +65,7 @@ export function UnifiedAuthCallback() {
       
       // Redirect to dashboard after delay
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/admin');
       }, 3000);
     } else {
       throw new Error(result.error || 'Failed to complete Google authentication');
@@ -98,7 +98,7 @@ export function UnifiedAuthCallback() {
     });
     
     setTimeout(() => {
-      navigate('/dashboard');
+              navigate('/admin');
     }, 3000);
   };
 

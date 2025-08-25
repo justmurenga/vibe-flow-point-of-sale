@@ -80,10 +80,10 @@ export default function LandingPage() {
 
             if (targetDomain && navigationService.getInstance().getCurrentDomain() !== targetDomain) {
               console.info('LandingPage: redirecting to tenant domain', targetDomain);
-              window.location.href = `https://${targetDomain}/dashboard`;
+              window.location.href = `https://${targetDomain}/admin`;
             } else {
               console.info('LandingPage: navigating to /dashboard on current domain');
-              navigate("/dashboard");
+              navigate("/admin");
             }
           } catch (e) {
             console.error('LandingPage: apex redirect failed, falling back', e);
@@ -92,7 +92,7 @@ export default function LandingPage() {
         } else if (shouldRedirect) {
           setRedirecting(true);
           console.info('LandingPage: internal redirect to /dashboard');
-          navigate('/dashboard');
+                        navigate('/admin');
         }
       };
       handleRedirect();
@@ -114,7 +114,7 @@ export default function LandingPage() {
             setShowSignup(false);
             // Handle successful signup
             if (result.tenant) {
-              navigate('/dashboard');
+              navigate('/admin');
             }
           }}
           onError={(error) => {

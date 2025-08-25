@@ -219,7 +219,7 @@ export default function AuthCallback() {
           
           setTimeout(() => {
             const target = getPostAuthRedirect(profile?.role || null, domainConfig, profile?.tenant_id || null, tenantData?.subdomain || null);
-            window.location.href = target.startsWith('http') ? target : `https://${targetSubdomain}/dashboard`;
+            window.location.href = target.startsWith('http') ? target : `https://${targetSubdomain}/admin`;
           }, 1500);
           return;
         } else {
@@ -230,7 +230,7 @@ export default function AuthCallback() {
                                  'online'; // Default for custom domains
           const targetSubdomain = `${tenantData.subdomain}.${domainExtension}`;
           const target = getPostAuthRedirect(profile?.role || null, domainConfig, profile?.tenant_id || null, tenantData?.subdomain || null);
-          window.location.href = target.startsWith('http') ? target : `https://${targetSubdomain}/dashboard`;
+          window.location.href = target.startsWith('http') ? target : `https://${targetSubdomain}/admin`;
           return;
         }
       }

@@ -356,77 +356,7 @@ export function UnifiedRouter() {
         } 
       />
       
-      {/* Legacy Routes - Keep for backward compatibility */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <TenantAdminDashboard />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/sales" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <Sales />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/inventory" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <StockManagement />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/customers" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <Customers />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/reports" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <Reports />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/settings" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <Settings />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/integrations" 
-        element={
-          <ProtectedRoute>
-            <TenantAdminLayout>
-              <ExternalIntegrationsManager />
-            </TenantAdminLayout>
-          </ProtectedRoute>
-        } 
-      />
+
     </Routes>
   );
 }

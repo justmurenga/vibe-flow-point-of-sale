@@ -127,7 +127,7 @@ const Navigation = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
                       Dashboard
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
@@ -185,7 +185,7 @@ const Navigation = () => {
                 <div className="pt-4 border-t border-border">
                   {user ? (
                     <div className="flex flex-col space-y-2">
-                      <Button variant="ghost" onClick={() => navigate('/dashboard')} className="justify-start">
+                      <Button variant="ghost" onClick={() => navigate('/admin')} className="justify-start">
                         Dashboard
                       </Button>
                       <Button variant="ghost" onClick={handleSignOut} className="justify-start">

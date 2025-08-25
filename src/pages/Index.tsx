@@ -61,7 +61,7 @@ export default function Index({ onSignupClick }: IndexProps) {
 
             if (!tenantId) {
               console.warn('LandingPage: missing tenantId, falling back to vibenet.online');
-              window.location.href = "https://vibenet.online/dashboard";
+              window.location.href = "https://vibenet.online/admin";
               return;
             }
             // Try primary verified domain first
@@ -95,19 +95,19 @@ export default function Index({ onSignupClick }: IndexProps) {
 
             if (targetDomain && getCurrentDomain() !== targetDomain) {
               console.info('LandingPage: redirecting to tenant domain', targetDomain);
-              window.location.href = `https://${targetDomain}/dashboard`;
+              window.location.href = `https://${targetDomain}/admin`;
             } else {
               console.info('LandingPage: navigating to /dashboard on current domain');
-              navigate("/dashboard");
+              navigate("/admin");
             }
           } catch (e) {
             console.error('LandingPage: apex redirect failed, falling back', e);
-            window.location.href = "https://vibenet.online/dashboard";
+                          window.location.href = "https://vibenet.online/admin";
           }
         } else if (shouldRedirect) {
           setRedirecting(true);
           console.info('LandingPage: internal redirect to /dashboard');
-          navigate('/dashboard');
+                        navigate('/admin');
         }
       };
       handleRedirect();
@@ -129,7 +129,7 @@ export default function Index({ onSignupClick }: IndexProps) {
             setShowSignup(false);
             // Handle successful signup
             if (result.tenant) {
-              navigate('/dashboard');
+              navigate('/admin');
             }
           }}
           onError={(error) => {

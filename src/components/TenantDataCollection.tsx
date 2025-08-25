@@ -224,7 +224,7 @@ export function TenantDataCollection({ onSuccess, isGoogleUser = false, mode = '
         // Redirect to dashboard after successful update
         setTimeout(() => {
           onSuccess?.();
-          navigate('/dashboard');
+          navigate('/admin');
         }, 1000);
       }
 

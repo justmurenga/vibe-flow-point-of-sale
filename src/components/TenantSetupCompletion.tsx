@@ -132,7 +132,7 @@ export function TenantSetupCompletion() {
   };
 
   const handleContinueToDashboard = () => {
-    navigate('/dashboard');
+            navigate('/admin');
   };
 
   const handleCompleteSetup = () => {
