@@ -33,6 +33,9 @@ import SuperAdminCommunications from '@/pages/SuperAdminCommunications';
 import SuperAdminSettings from '@/pages/SuperAdminSettings';
 import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 
+// Tenant Layout Component
+import { TenantAdminLayout } from '@/components/TenantAdminLayout';
+
 // Protected Components
 import Sales from '@/pages/Sales';
 import StockManagement from '@/pages/StockManagement';
@@ -199,12 +202,14 @@ export function UnifiedRouter() {
         } 
       />
       
-      {/* Protected Routes */}
+      {/* Protected Routes - Tenant Dashboard */}
       <Route 
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <Sales />
+            <TenantAdminLayout>
+              <Sales />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -212,7 +217,9 @@ export function UnifiedRouter() {
         path="/sales" 
         element={
           <ProtectedRoute>
-            <Sales />
+            <TenantAdminLayout>
+              <Sales />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -220,7 +227,9 @@ export function UnifiedRouter() {
         path="/inventory" 
         element={
           <ProtectedRoute>
-            <StockManagement />
+            <TenantAdminLayout>
+              <StockManagement />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -228,7 +237,9 @@ export function UnifiedRouter() {
         path="/customers" 
         element={
           <ProtectedRoute>
-            <Customers />
+            <TenantAdminLayout>
+              <Customers />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -236,7 +247,9 @@ export function UnifiedRouter() {
         path="/reports" 
         element={
           <ProtectedRoute>
-            <Reports />
+            <TenantAdminLayout>
+              <Reports />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -244,7 +257,9 @@ export function UnifiedRouter() {
         path="/settings" 
         element={
           <ProtectedRoute>
-            <Settings />
+            <TenantAdminLayout>
+              <Settings />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -252,7 +267,9 @@ export function UnifiedRouter() {
         path="/integrations" 
         element={
           <ProtectedRoute>
-            <ExternalIntegrationsManager />
+            <TenantAdminLayout>
+              <ExternalIntegrationsManager />
+            </TenantAdminLayout>
           </ProtectedRoute>
         } 
       />
