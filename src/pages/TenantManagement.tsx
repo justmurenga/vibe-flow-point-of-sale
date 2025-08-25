@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 import TenantCustomPricing from '@/components/TenantCustomPricing';
+import EnhancedTenantSubscription from '@/components/EnhancedTenantSubscription';
 import { getBaseDomain } from '@/lib/domain-manager';
 import { useUnifiedCommunication } from '@/hooks/useUnifiedCommunication';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
@@ -280,25 +281,13 @@ export default function TenantManagement() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
-  const [customPricingDialogOpen, setCustomPricingDialogOpen] = useState(false);
-  const [manualPaymentDialogOpen, setManualPaymentDialogOpen] = useState(false);
-  const [savingManualPayment, setSavingManualPayment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, userRole } = useAuth();
   const { sendWelcomeEmail: sendWelcomeEmailUnified, sendEmail } = useUnifiedCommunication();
   const { currency } = useBusinessSettings();
 
-  const [manualPayment, setManualPayment] = useState({
-    amount: '',
-    currency: 'KES',
-    paymentDate: new Date().toISOString().split('T')[0],
-    method: 'manual',
-    reference: '',
-    planId: '',
-    notes: '',
-    email: ''
-  });
+
 
   const [newTenant, setNewTenant] = useState({
     name: '',
@@ -496,10 +485,7 @@ export default function TenantManagement() {
     setSubscriptionDialogOpen(true);
   };
 
-  const openCustomPricingDialog = (tenant: Tenant) => {
-    setSelectedTenant(tenant);
-    setCustomPricingDialogOpen(true);
-  };
+
 
   const updateSubscription = async (tenantId: string, newPlanId: string) => {
     setSubscriptionLoading(true);
@@ -645,125 +631,7 @@ export default function TenantManagement() {
     }
   };
 
-  const openManualPaymentDialog = (tenant: Tenant, planId?: string) => {
-    setSelectedTenant(tenant);
-    setManualPayment({
-      amount: '',
-      currency: 'KES',
-      paymentDate: new Date().toISOString().split('T')[0],
-      method: 'manual',
-      reference: `MAN-${(tenant.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)}-${Date.now().toString().slice(-6)}`,
-      planId: planId || '',
-      notes: '',
-      email: tenant.contact_email || ''
-    });
-    setManualPaymentDialogOpen(true);
-  };
 
-  const handleSaveManualPayment = async () => {
-    if (!selectedTenant) return;
-
-    const amountNum = Number(manualPayment.amount);
-    if (!amountNum || amountNum <= 0) {
-      toast({ title: 'Invalid amount', description: 'Please enter a valid amount', variant: 'destructive' });
-      return;
-    }
-    if (!manualPayment.reference) {
-      toast({ title: 'Reference required', description: 'Please provide a unique payment reference', variant: 'destructive' });
-      return;
-    }
-
-    try {
-      setSavingManualPayment(true);
-
-      // Ensure unique reference
-      const { count: existingCount } = await supabase
-        .from('payment_history')
-        .select('id', { count: 'exact', head: true })
-        .eq('payment_reference', manualPayment.reference);
-
-      if ((existingCount || 0) > 0) {
-        toast({ title: 'Duplicate reference', description: 'This payment reference already exists. Use a unique one.', variant: 'destructive' });
-        return;
-      }
-
-      // Insert payment record
-      const { data: inserted, error: insertError } = await supabase
-        .from('payment_history')
-        .insert({
-          tenant_id: selectedTenant.id,
-          amount: amountNum,
-          currency: manualPayment.currency,
-          billing_plan_id: manualPayment.planId || null,
-          payment_status: 'completed',
-          payment_method: manualPayment.method,
-          payment_reference: manualPayment.reference,
-          paid_at: manualPayment.paymentDate,
-          created_at: new Date().toISOString(),
-          metadata: {
-            notes: manualPayment.notes,
-            recorded_by: user?.id || null,
-            manual: true
-          }
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // Update next billing date if subscription exists
-      const sub = tenantSubscriptions.find(s => s.tenant_id === selectedTenant.id);
-      if (sub) {
-        let nextBillingDate: string | null = null;
-        try {
-          const { data: nextDateData } = await supabase.rpc('calculate_next_billing_date', { input_date: manualPayment.paymentDate });
-          nextBillingDate = Array.isArray(nextDateData) ? nextDateData[0] : (nextDateData as any);
-        } catch {}
-
-        if (nextBillingDate) {
-          await supabase
-            .from('tenant_subscription_details')
-            .update({ next_billing_date: nextBillingDate })
-            .eq('tenant_id', selectedTenant.id);
-        }
-      }
-
-      // Send confirmation email
-      const planName = billingPlans.find(p => p.id === manualPayment.planId)?.name;
-      const amountDisplay = `${manualPayment.currency} ${amountNum.toLocaleString()}`;
-      const toEmail = manualPayment.email || selectedTenant.contact_email || '';
-
-      if (toEmail) {
-        await sendEmail(
-          toEmail,
-          `Payment received - ${manualPayment.reference}`,
-          `
-            <h2>Payment Confirmation</h2>
-            <p>Dear ${selectedTenant.name},</p>
-            <p>We have received your payment of <strong>${amountDisplay}</strong>${planName ? ` for plan <strong>${planName}</strong>` : ''} on <strong>${manualPayment.paymentDate}</strong>.</p>
-            <p>Reference: <strong>${manualPayment.reference}</strong></p>
-            <p>Method: ${manualPayment.method}</p>
-            <p>Thank you for your business.</p>
-          `,
-          {
-            recipientName: selectedTenant.name,
-            textContent: `Payment received: ${amountDisplay}${planName ? ` for plan ${planName}` : ''} on ${manualPayment.paymentDate}. Reference: ${manualPayment.reference}.`,
-            priority: 'medium'
-          }
-        );
-      }
-
-      // Refresh data and close
-      await Promise.all([fetchTenantSubscriptions(), fetchTenants()]);
-      setManualPaymentDialogOpen(false);
-      toast({ title: 'Payment recorded', description: 'Manual payment recorded successfully' });
-    } catch (err: any) {
-      console.error('Manual payment error:', err);
-      toast({ title: 'Error', description: err.message || 'Failed to record payment', variant: 'destructive' });
-    } finally {
-      setSavingManualPayment(false);
-    }
-  };
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -937,14 +805,7 @@ export default function TenantManagement() {
                             <Users className="h-4 w-4 mr-1" />
                             Users
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openCustomPricingDialog(tenant)}
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Custom Pricing
-                          </Button>
+                          
                           <Button
                             variant="outline"
                             size="sm"
@@ -962,14 +823,7 @@ export default function TenantManagement() {
                             <Settings className="h-4 w-4 mr-1" />
                             {tenant.is_active ? 'Deactivate' : 'Activate'}
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openManualPaymentDialog(tenant, subscription?.billing_plan_id)}
-                          >
-                            <CreditCard className="h-4 w-4 mr-1" />
-                            Record Payment
-                          </Button>
+                          
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1012,298 +866,36 @@ export default function TenantManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* Subscription Management Dialog */}
+        {/* Enhanced Subscription Management Dialog */}
         <Dialog open={subscriptionDialogOpen} onOpenChange={setSubscriptionDialogOpen}>
-          <DialogContent className="sm:max-w-[700px]">
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Manage Subscription - {selectedTenant?.name}
+                Enhanced Subscription Management - {selectedTenant?.name}
               </DialogTitle>
               <DialogDescription>
-                Upgrade, downgrade, or manage the subscription plan for this tenant
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6">
-              {/* Current Plan Display with Custom Pricing */}
-              {selectedSubscription && (
-                <CurrentPlanDisplay 
-                  subscription={selectedSubscription} 
-                  tenantId={selectedTenant?.id}
-                />
-              )}
-              
-              {/* Available Plans */}
-              <div>
-                <h3 className="font-semibold mb-4">
-                  {selectedSubscription ? 'Change Plan' : 'Select Plan'}
-                </h3>
-                <div className="grid gap-4">
-                  {billingPlans.map((plan) => {
-                    const isCurrentPlan = selectedSubscription?.billing_plan_id === plan.id;
-                    const currentPlanPrice = selectedSubscription?.billing_plans?.price || 0;
-                    const isUpgrade = plan.price > currentPlanPrice;
-                    const isDowngrade = plan.price < currentPlanPrice;
-                    
-                    return (
-                      <div
-                        key={plan.id}
-                        className={`p-4 border rounded-lg transition-all ${
-                          isCurrentPlan 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Badge className={plan.badge_color}>
-                              {plan.badge}
-                            </Badge>
-                            <div>
-                              <h4 className="font-medium flex items-center gap-2">
-                                {plan.name}
-                                {isCurrentPlan && (
-                                  <Badge variant="outline" className="text-xs">
-                                    Current
-                                  </Badge>
-                                )}
-                              </h4>
-                              <p className="text-sm text-muted-foreground">
-                                {currency.symbol} {plan.price.toLocaleString()} per {plan.period}
-                              </p>
-                              {plan.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {plan.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {selectedSubscription && !isCurrentPlan && (
-                              <div className="text-right mr-3">
-                                {isUpgrade && (
-                                  <div className="flex items-center gap-1 text-green-600">
-                                    <ArrowUpCircle className="h-4 w-4" />
-                                    <span className="text-xs">Upgrade</span>
-                                  </div>
-                                )}
-                                {isDowngrade && (
-                                  <div className="flex items-center gap-1 text-orange-600">
-                                    <ArrowDownCircle className="h-4 w-4" />
-                                    <span className="text-xs">Downgrade</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            
-                            <Button
-                              variant={isCurrentPlan ? "secondary" : "outline"}
-                              size="sm"
-                              disabled={isCurrentPlan || subscriptionLoading}
-                              onClick={() => selectedTenant && updateSubscription(selectedTenant.id, plan.id)}
-                            >
-                              {subscriptionLoading ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                              ) : isCurrentPlan ? (
-                                'Current Plan'
-                              ) : selectedSubscription ? (
-                                isUpgrade ? 'Upgrade' : 'Downgrade'
-                              ) : (
-                                'Select Plan'
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Plan Features */}
-                        {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-border/50">
-                            <div className="grid grid-cols-2 gap-2">
-                              {(plan.features as any[]).slice(0, 6).map((feature, index) => (
-                                <div key={index} className="flex items-center gap-2 text-xs">
-                                  <div className={`w-2 h-2 rounded-full ${
-                                    feature.included ? 'bg-green-500' : 'bg-gray-300'
-                                  }`} />
-                                  <span className={feature.included ? 'text-foreground' : 'text-muted-foreground'}>
-                                    {feature.name}
-                                    {feature.limit && feature.limit !== 'unlimited' && ` (${feature.limit})`}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {/* Notes */}
-              <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium mb-1">Important Notes:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Plan changes take effect immediately</li>
-                  <li>Upgrades will be prorated for the current billing period</li>
-                  <li>Downgrades will apply at the next billing cycle</li>
-                  <li>All plan changes will be reflected in the next invoice</li>
-                </ul>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Manual Payment Dialog */}
-        <Dialog open={manualPaymentDialogOpen} onOpenChange={setManualPaymentDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Record Manual Payment - {selectedTenant?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Capture a manual payment for this tenant. A unique reference is required.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    value={manualPayment.amount}
-                    onChange={(e) => setManualPayment((p) => ({ ...p, amount: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select value={manualPayment.currency} onValueChange={(v) => setManualPayment((p) => ({ ...p, currency: v }))}>
-                    <SelectTrigger id="currency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="KES">KES (Kenyan Shilling)</SelectItem>
-                      <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date">Payment Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={manualPayment.paymentDate}
-                    onChange={(e) => setManualPayment((p) => ({ ...p, paymentDate: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="method">Method</Label>
-                  <Select value={manualPayment.method} onValueChange={(v) => setManualPayment((p) => ({ ...p, method: v }))}>
-                    <SelectTrigger id="method">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                      <SelectItem value="mpesa">M-Pesa</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="reference">Payment Reference</Label>
-                  <Input
-                    id="reference"
-                    placeholder="Enter unique reference"
-                    value={manualPayment.reference}
-                    onChange={(e) => setManualPayment((p) => ({ ...p, reference: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="plan">Billing Plan (optional)</Label>
-                  <Select value={manualPayment.planId} onValueChange={(v) => setManualPayment((p) => ({ ...p, planId: v }))}>
-                    <SelectTrigger id="plan">
-                      <SelectValue placeholder="Select plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {billingPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Send Receipt To</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={selectedTenant?.contact_email || 'client@example.com'}
-                    value={manualPayment.email}
-                    onChange={(e) => setManualPayment((p) => ({ ...p, email: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Optional notes"
-                    value={manualPayment.notes}
-                    onChange={(e) => setManualPayment((p) => ({ ...p, notes: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setManualPaymentDialogOpen(false)} disabled={savingManualPayment}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveManualPayment} disabled={savingManualPayment}>
-                  {savingManualPayment && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-                  Save Payment
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Custom Pricing Dialog */}
-        <Dialog open={customPricingDialogOpen} onOpenChange={setCustomPricingDialogOpen}>
-          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Custom Pricing - {selectedTenant?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Manage custom pricing overrides for this tenant
+                Unified billing system with currency conversion and advanced features
               </DialogDescription>
             </DialogHeader>
             
             {selectedTenant && (
-              <TenantCustomPricing 
-                tenantId={selectedTenant.id} 
+              <EnhancedTenantSubscription
+                tenantId={selectedTenant.id}
                 tenantName={selectedTenant.name}
+                onSubscriptionUpdated={() => {
+                  fetchTenantSubscriptions();
+                  fetchTenants();
+                  setSubscriptionDialogOpen(false);
+                }}
               />
             )}
           </DialogContent>
         </Dialog>
+
+
+
+
       </div>
     </SuperAdminLayout>
   );

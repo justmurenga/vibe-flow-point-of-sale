@@ -52,6 +52,7 @@ const businessItems = [
 
 const aiItems = [
   { title: "AI Dashboard", url: "/admin/ai-dashboard", icon: Brain, featureRequired: "ai_features" },
+  { title: "Advanced Analytics", url: "/admin/advanced-analytics", icon: BarChart3, featureRequired: "ai_features" },
   { title: "AI Automation", url: "/admin/ai-automation", icon: Zap, featureRequired: "ai_features" },
   { title: "AI Performance", url: "/admin/ai-performance", icon: Activity, featureRequired: "ai_features" },
 ];

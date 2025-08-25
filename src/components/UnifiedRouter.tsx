@@ -56,6 +56,9 @@ import Communications from '@/pages/Communications';
 import AIDashboard from '@/components/ai/AIDashboard';
 import AIAutomationRules from '@/components/ai/AIAutomationRules';
 
+// Analytics Components
+import AdvancedAnalyticsDashboard from '@/components/analytics/AdvancedAnalyticsDashboard';
+
 // Protected Route Component
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -355,6 +358,18 @@ export function UnifiedRouter() {
           <ProtectedRoute>
             <TenantAdminLayout>
               <AIAutomationRules />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Advanced Analytics Routes */}
+      <Route 
+        path="/admin/advanced-analytics" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <AdvancedAnalyticsDashboard />
             </TenantAdminLayout>
           </ProtectedRoute>
         } 

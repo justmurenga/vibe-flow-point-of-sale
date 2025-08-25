@@ -29,10 +29,7 @@ export default function AuthCallback() {
 
   const handleAuthCallback = async () => {
     try {
-      console.log('=== UNIFIED AUTH CALLBACK STARTED ===');
-      console.log('Current URL:', window.location.href);
-      console.log('Search params:', window.location.search);
-      console.log('Hash fragment:', window.location.hash);
+      
       
       // Reduced wait time to prevent delays
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -57,17 +54,13 @@ export default function AuthCallback() {
       setUserEmail(user.email || '');
       setUserFullName(user.user_metadata?.full_name || user.user_metadata?.name || '');
 
-      console.log('Auth callback - User ID:', user.id, 'Email:', user.email);
+      
 
       // Use domain manager to get domain configuration
       const domainConfig = await domainManager.getCurrentDomainConfig();
-      console.log('Domain config:', domainConfig);
-
       const isGoogleAuth = searchParams.get('type') === 'google' || 
                           user.app_metadata?.provider === 'google';
       const isTrialSignup = searchParams.get('from') === 'trial';
-      
-      console.log('Auth type:', { isGoogleAuth, isTrialSignup });
 
       // Get user profile
       const { data: profile, error: profileError } = await supabase
@@ -82,11 +75,11 @@ export default function AuthCallback() {
         return;
       }
 
-      console.log('Profile check result:', { profile, hasProfile: !!profile });
+
 
       // If on subdomain, verify tenant access
       if (domainConfig.isSubdomain && domainConfig.tenantId) {
-        console.log('Verifying subdomain access for tenant:', domainConfig.tenantId);
+
         
         if (!profile) {
           setError('New users cannot access business workspaces directly. Please contact your administrator.');
@@ -121,7 +114,7 @@ export default function AuthCallback() {
           return;
         }
 
-        console.log('User verified as member of tenant');
+
       } else if (domainConfig.isSubdomain && !domainConfig.tenantId) {
         setError('This business workspace does not exist.');
         return;

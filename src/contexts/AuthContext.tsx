@@ -6,8 +6,7 @@ import { domainManager } from '@/lib/domain-manager';
 import { tabStabilityManager } from '@/lib/tab-stability-manager';
 import { PasswordChangeModal } from '@/components/PasswordChangeModal';
 
-console.log(' [AUTH] AuthContext module loading...');
-console.log(' [AUTH] React hooks available:', { useState: typeof useState, useEffect: typeof useEffect });
+
 
 // User roles are now dynamically managed via user_roles table
 type UserRole = string; // Dynamic role from database
