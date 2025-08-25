@@ -5,7 +5,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { TabStabilityProvider } from '@/components/TabStabilityProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AppProvider } from '@/contexts/AppContext';
-import { DomainProvider } from '@/lib/domain-manager';
 import { UnifiedRouter } from '@/components/UnifiedRouter';
 import { PageLoader } from '@/components/PageLoader';
 import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error-handling';
@@ -55,11 +54,9 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <Router>
             <AuthProvider>
-              <DomainProvider>
-                <Suspense fallback={<PageLoader />}>
-                  <UnifiedRouter />
-                </Suspense>
-              </DomainProvider>
+              <Suspense fallback={<PageLoader />}>
+                <UnifiedRouter />
+              </Suspense>
             </AuthProvider>
           </Router>
         </QueryClientProvider>
