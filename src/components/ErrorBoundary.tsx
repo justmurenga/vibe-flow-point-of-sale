@@ -1,32 +1,76 @@
-import { Component, ReactNode } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error-handling';
+import { LoggingService, LogLevel, LogCategory } from '@/services/LoggingService';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  private logger = LoggingService.getInstance();
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ errorInfo });
+
+    // Log the error
+    this.logger.error(LogCategory.SYSTEM, 'React Error Boundary caught error', {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack
+    });
+
+    // Create app error
+    const appError = ErrorHandler.createError(
+      ErrorType.UNKNOWN,
+      error.message,
+      'Something went wrong. Please refresh the page and try again.',
+      ErrorSeverity.HIGH,
+      {
+        component: 'ErrorBoundary',
+        stack: error.stack,
+        componentStack: errorInfo.componentStack
+      },
+      error
+    );
+
+    // Call custom error handler
+    this.props.onError?.(error, errorInfo);
   }
+
+  private handleRetry = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
+  private handleReportError = () => {
+    if (this.state.error) {
+      // In a real app, you might send this to a support system
+      this.logger.critical(LogCategory.SYSTEM, 'User reported error', {
+        error: this.state.error.message,
+        stack: this.state.error.stack,
+        componentStack: this.state.errorInfo?.componentStack
+      });
+    }
+  };
 
   render() {
     if (this.state.hasError) {
@@ -35,28 +79,37 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                <CardTitle>Something went wrong</CardTitle>
-              </div>
+              <CardTitle className="text-destructive">Something went wrong</CardTitle>
               <CardDescription>
-                An unexpected error occurred. Please try refreshing the page.
+                An unexpected error occurred. We've been notified and are working to fix it.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {this.state.error && (
-                <Alert variant="destructive">
-                  <AlertTitle>Error Details</AlertTitle>
-                  <AlertDescription className="text-xs font-mono">
-                    {this.state.error.message}
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Alert>
+                <AlertDescription>
+                  {this.state.error?.message || 'An unknown error occurred'}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="flex gap-2">
+                <Button onClick={this.handleRetry} className="flex-1">
+                  Try Again
+                </Button>
+                <Button 
+                  onClick={this.handleReportError} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  Report Issue
+                </Button>
+              </div>
+              
               <Button 
                 onClick={() => window.location.reload()} 
+                variant="ghost" 
                 className="w-full"
               >
                 Refresh Page

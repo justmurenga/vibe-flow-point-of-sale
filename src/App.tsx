@@ -8,6 +8,9 @@ import { AppProvider } from '@/contexts/AppContext';
 import { DomainProvider } from '@/lib/domain-manager';
 import { UnifiedRouter } from '@/components/UnifiedRouter';
 import { PageLoader } from '@/components/PageLoader';
+import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error-handling';
+import { LoggingService, LogLevel, LogCategory } from '@/services/LoggingService';
+import { useEffect } from 'react';
 
 // Configure React Query
 const queryClient = new QueryClient({
@@ -30,6 +33,22 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  const logger = LoggingService.getInstance();
+
+  useEffect(() => {
+    // Initialize logging
+    logger.info(LogCategory.SYSTEM, 'Application started', {
+      version: process.env.REACT_APP_VERSION || '1.0.0',
+      environment: process.env.NODE_ENV
+    });
+
+    // Cleanup on unmount
+    return () => {
+      logger.info(LogCategory.SYSTEM, 'Application shutting down');
+      logger.destroy();
+    };
+  }, [logger]);
+
   return (
     <ErrorBoundary>
       <TabStabilityProvider>
