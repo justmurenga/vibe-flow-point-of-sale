@@ -8,12 +8,12 @@ export const useNavigation = () => {
   const { user, userRole } = useAuth();
 
   const navigateTo = (path: string) => {
-    const url = navigationService.getNavigationUrl(path);
+    const url = navigationService.getInstance().getNavigationUrl(path);
     navigate(url);
   };
 
   const navigateToAuth = () => {
-    const authUrl = navigationService.getAuthUrl();
+    const authUrl = navigationService.getInstance().getAuthUrl();
     if (authUrl.startsWith('http')) {
       window.location.href = authUrl;
     } else {
@@ -22,7 +22,7 @@ export const useNavigation = () => {
   };
 
   const navigateToSignup = () => {
-    const signupUrl = navigationService.getSignupUrl();
+    const signupUrl = navigationService.getInstance().getSignupUrl();
     if (signupUrl.startsWith('http')) {
       window.location.href = signupUrl;
     } else {
@@ -31,27 +31,27 @@ export const useNavigation = () => {
   };
 
   const navigateToMain = () => {
-    navigationService.navigateToMain();
+    navigationService.getInstance().navigateToMain();
   };
 
   const navigateToTenant = async (tenantId: string) => {
-    await navigationService.navigateToTenant(tenantId);
+    await navigationService.getInstance().navigateToTenant(tenantId);
   };
 
   const getDefaultRedirectUrl = () => {
-    return navigationService.getDefaultRedirectUrl(userRole);
+    return navigationService.getInstance().getDefaultRedirectUrl(userRole);
   };
 
   const hasRouteAccess = (path: string) => {
-    return navigationService.hasRouteAccess(path, userRole);
+    return navigationService.getInstance().hasRouteAccess(path, userRole);
   };
 
   const isRouteProtected = (path: string) => {
-    return navigationService.isRouteProtected(path);
+    return navigationService.getInstance().isRouteProtected(path);
   };
 
   const isRoutePublic = (path: string) => {
-    return navigationService.isRoutePublic(path);
+    return navigationService.getInstance().isRoutePublic(path);
   };
 
   return {
@@ -65,8 +65,8 @@ export const useNavigation = () => {
     isRouteProtected,
     isRoutePublic,
     currentPath: location.pathname,
-    isMainDomain: navigationService.isMainDomain(),
-    isSubdomain: navigationService.isSubdomain(),
-    isDevelopmentDomain: navigationService.isDevelopmentDomain(),
+    isMainDomain: navigationService.getInstance().isMainDomain(),
+    isSubdomain: navigationService.getInstance().isSubdomain(),
+    isDevelopmentDomain: navigationService.getInstance().isDevelopmentDomain(),
   };
 };

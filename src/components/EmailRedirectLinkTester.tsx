@@ -35,9 +35,9 @@ export function EmailRedirectLinkTester() {
       name: 'Email Verification Link',
       description: 'Link sent to verify user email address',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/verify-email?email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should redirect to email verification page with pre-filled email'
@@ -46,9 +46,9 @@ export function EmailRedirectLinkTester() {
       name: 'Password Reset Link',
       description: 'Link sent to reset user password',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/reset-password?email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should redirect to password reset page with pre-filled email'
@@ -57,9 +57,9 @@ export function EmailRedirectLinkTester() {
       name: 'User Invitation Link',
       description: 'Link sent to invite new users to workspace',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/invite?email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should redirect to invitation acceptance page with pre-filled email'
@@ -68,9 +68,9 @@ export function EmailRedirectLinkTester() {
       name: 'OAuth Callback Link (Google)',
       description: 'Link for Google OAuth callback after signup',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/auth/callback?type=google&signup=true&email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should handle Google OAuth callback and create user account'
@@ -79,9 +79,9 @@ export function EmailRedirectLinkTester() {
       name: 'Email Verification Callback',
       description: 'Link for email verification callback',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/auth/callback?type=email&email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should handle email verification and mark email as verified'
@@ -90,9 +90,9 @@ export function EmailRedirectLinkTester() {
       name: 'Invitation Callback',
       description: 'Link for invitation acceptance callback',
       generateUrl: (email: string) => {
-        const baseUrl = navigationService.isMainDomain() 
+        const baseUrl = navigationService.getInstance().isMainDomain() 
           ? 'https://vibenet.online' 
-          : `https://${navigationService.getCurrentDomain()}`;
+          : `https://${navigationService.getInstance().getCurrentDomain()}`;
         return `${baseUrl}/auth/callback?from=invite&email=${encodeURIComponent(email)}`;
       },
       expectedBehavior: 'Should handle invitation acceptance and add user to workspace'
@@ -119,10 +119,10 @@ export function EmailRedirectLinkTester() {
   };
 
   const getDomainInfo = () => {
-    const currentDomain = navigationService.getCurrentDomain();
-    const isMain = navigationService.isMainDomain();
-    const isSub = navigationService.isSubdomain();
-    const isDev = navigationService.isDevelopmentDomain();
+    const currentDomain = navigationService.getInstance().getCurrentDomain();
+    const isMain = navigationService.getInstance().isMainDomain();
+    const isSub = navigationService.getInstance().isSubdomain();
+    const isDev = navigationService.getInstance().isDevelopmentDomain();
 
     return {
       currentDomain,
