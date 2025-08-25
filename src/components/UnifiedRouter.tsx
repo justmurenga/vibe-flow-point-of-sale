@@ -44,6 +44,14 @@ import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import ExternalIntegrationsManager from '@/components/integrations/ExternalIntegrationsManager';
 
+// Tenant Admin Components
+import TenantAdminDashboard from '@/pages/TenantAdminDashboard';
+import Products from '@/pages/Products';
+import Purchases from '@/pages/Purchases';
+import Accounting from '@/pages/Accounting';
+import Team from '@/pages/Team';
+import Communications from '@/pages/Communications';
+
 // Protected Route Component
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -202,13 +210,159 @@ export function UnifiedRouter() {
         } 
       />
       
-      {/* Protected Routes - Tenant Dashboard */}
+      {/* Tenant Admin Routes - Main Dashboard */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <TenantAdminDashboard />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Tenant Admin Routes - Business Management */}
+      <Route 
+        path="/admin/products" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Products />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/sales" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Sales />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/purchases" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Purchases />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/customers" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Customers />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/customer-management" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Customers />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/accounting" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Accounting />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/reports" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Reports />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/integrations" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <ExternalIntegrationsManager />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/team" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Team />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/communications" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Communications />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/settings" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <Settings />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* AI Routes */}
+      <Route 
+        path="/admin/ai-dashboard" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <TenantAdminDashboard />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/ai-automation" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <TenantAdminDashboard />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Legacy Routes - Keep for backward compatibility */}
       <Route 
         path="/dashboard" 
         element={
           <ProtectedRoute>
             <TenantAdminLayout>
-              <Sales />
+              <TenantAdminDashboard />
             </TenantAdminLayout>
           </ProtectedRoute>
         } 
