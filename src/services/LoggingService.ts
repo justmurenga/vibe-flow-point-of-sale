@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react'; // Add this import
 
 export enum LogLevel {
   DEBUG = 'DEBUG',
