@@ -2,22 +2,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Index from "./Index";
-import { getCurrentDomain, isSubdomain, isCustomDomain } from "@/lib/domain-manager";
-import { supabase } from "@/integrations/supabase/client";
+import { navigationService } from "@/services/NavigationService";
+import { useNavigation } from "@/hooks/useNavigation";
 import { UnifiedSignup } from "@/components/UnifiedSignup";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LandingPage() {
   const { user, loading, tenantId, userRole } = useAuth();
   const navigate = useNavigate();
+  const { navigateToMain, navigateToTenant } = useNavigation();
   const [redirecting, setRedirecting] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
   const { isMainDevDomain, shouldRedirect, isApexShop, isApexOnline } = useMemo(() => {
-    const domain = getCurrentDomain();
-    const isMainDev = domain === "vibenet.online" || domain === "www.vibenet.online";
+    const domain = navigationService.getCurrentDomain();
+    const isMainDev = navigationService.isMainDomain();
     const apexShop = domain === "vibenet.shop" || domain === "www.vibenet.shop";
     const apexOnline = false; // No apex online domains currently
-    const redirect = !isMainDev && (isSubdomain(domain) || isCustomDomain(domain) || apexShop);
+    const redirect = !isMainDev && (navigationService.isSubdomain() || apexShop);
     return { isMainDevDomain: isMainDev, shouldRedirect: redirect, isApexShop: apexShop, isApexOnline: apexOnline };
   }, []);
 
@@ -33,7 +35,7 @@ export default function LandingPage() {
         // On apex domains, send authenticated users to their tenant's primary domain
         if (isApexShop || isApexOnline) {
           setRedirecting(true);
-          console.info('LandingPage: apex redirect start', { domain: getCurrentDomain(), tenantId, userRole });
+          console.info('LandingPage: apex redirect start', { domain: navigationService.getCurrentDomain(), tenantId, userRole });
           try {
             // Superadmins should stay on apex and go to SuperAdmin
             if (userRole === 'superadmin') {
@@ -44,7 +46,7 @@ export default function LandingPage() {
 
             if (!tenantId) {
               console.warn('LandingPage: missing tenantId, falling back to vibenet.online');
-              window.location.href = "https://vibenet.online/dashboard";
+              navigateToMain();
               return;
             }
             // Try primary verified domain first
@@ -76,7 +78,7 @@ export default function LandingPage() {
               }
             }
 
-            if (targetDomain && getCurrentDomain() !== targetDomain) {
+            if (targetDomain && navigationService.getCurrentDomain() !== targetDomain) {
               console.info('LandingPage: redirecting to tenant domain', targetDomain);
               window.location.href = `https://${targetDomain}/dashboard`;
             } else {
@@ -85,7 +87,7 @@ export default function LandingPage() {
             }
           } catch (e) {
             console.error('LandingPage: apex redirect failed, falling back', e);
-            window.location.href = "https://vibenet.online/dashboard";
+            navigateToMain();
           }
         } else if (shouldRedirect) {
           setRedirecting(true);
@@ -95,7 +97,7 @@ export default function LandingPage() {
       };
       handleRedirect();
     }
-  }, [user, loading]); // Reduced dependencies to prevent loops
+  }, [user, loading, navigate, navigateToMain, tenantId, userRole, isApexShop, isApexOnline, shouldRedirect, redirectAttempted]);
 
   // Show landing page while loading
   if (loading) {
