@@ -24,9 +24,9 @@ export const useUnifiedBilling = () => {
       
       // Fetch data in parallel
       const [subscriptionData, paymentData, plansData] = await Promise.all([
-        unifiedBillingService.getCurrentSubscription(tenantId),
-        unifiedBillingService.getPaymentHistory(tenantId),
-        unifiedBillingService.getBillingPlans()
+        unifiedBillingService.getInstance().getCurrentSubscription(tenantId),
+        unifiedBillingService.getInstance().getPaymentHistory(tenantId),
+        unifiedBillingService.getInstance().getBillingPlans()
       ]);
 
       setSubscription(subscriptionData);
@@ -35,7 +35,7 @@ export const useUnifiedBilling = () => {
 
       // Fetch effective pricing if subscription exists
       if (subscriptionData?.billing_plan_id) {
-        const pricing = await unifiedBillingService.getEffectivePricing(tenantId, subscriptionData.billing_plan_id);
+        const pricing = await unifiedBillingService.getInstance().getEffectivePricing(tenantId, subscriptionData.billing_plan_id);
         setEffectivePricing(pricing);
       }
     } catch (error) {
@@ -55,7 +55,7 @@ export const useUnifiedBilling = () => {
     if (!tenantId) return false;
     
     try {
-      const success = await unifiedBillingService.syncSubscriptionStatus(tenantId);
+      const success = await unifiedBillingService.getInstance().syncSubscriptionStatus(tenantId);
       if (success) {
         await fetchBillingData(); // Refresh data after sync
         toast({
@@ -89,7 +89,7 @@ export const useUnifiedBilling = () => {
     setUpgrading(planId);
     
     try {
-      const result = await unifiedBillingService.initiateCheckout(planId, tenantId);
+      const result = await unifiedBillingService.getInstance().initiateCheckout(planId, tenantId);
       
       if (result.error) {
         throw new Error(result.error);
@@ -132,7 +132,7 @@ export const useUnifiedBilling = () => {
   const verifyPayment = useCallback(async (reference: string) => {
     try {
       // Use existing verify payment edge function
-      const success = await unifiedBillingService.updatePaymentStatus(reference, 'completed');
+      const success = await unifiedBillingService.getInstance().updatePaymentStatus(reference, 'completed');
 
       if (!success) {
         throw new Error('Payment verification failed');
@@ -158,12 +158,12 @@ export const useUnifiedBilling = () => {
 
   // Get subscription access info
   const getSubscriptionAccess = useCallback(() => {
-    return unifiedBillingService.checkSubscriptionAccess(subscription);
+    return unifiedBillingService.getInstance().checkSubscriptionAccess(subscription);
   }, [subscription]);
 
   // Get feature access
   const getFeatureAccess = useCallback(() => {
-    return unifiedBillingService.getFeatureAccess(subscription);
+    return unifiedBillingService.getInstance().getFeatureAccess(subscription);
   }, [subscription]);
 
   // Check if user has specific feature

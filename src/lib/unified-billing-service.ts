@@ -463,5 +463,14 @@ class UnifiedBillingService {
   }
 }
 
-// Export singleton instance
-export const unifiedBillingService = new UnifiedBillingService();
+// Lazy initialization to prevent module-level instantiation
+let _unifiedBillingService: UnifiedBillingService | null = null;
+
+export const unifiedBillingService = {
+  getInstance(): UnifiedBillingService {
+    if (!_unifiedBillingService) {
+      _unifiedBillingService = new UnifiedBillingService();
+    }
+    return _unifiedBillingService;
+  }
+};

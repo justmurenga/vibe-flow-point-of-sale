@@ -491,4 +491,17 @@ export class AuthService {
   }
 }
 
-export const authService = AuthService.getInstance();
+// Change from:
+// export const authService = AuthService.getInstance();
+
+// To: Lazy initialization
+let _authService: AuthService | null = null;
+
+export const authService = {
+  getInstance(): AuthService {
+    if (!_authService) {
+      _authService = AuthService.getInstance();
+    }
+    return _authService;
+  }
+};

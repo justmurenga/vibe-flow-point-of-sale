@@ -309,4 +309,17 @@ export class NavigationService {
   }
 }
 
-export const navigationService = NavigationService.getInstance();
+// Change from:
+// export const navigationService = NavigationService.getInstance();
+
+// To: Lazy initialization
+let _navigationService: NavigationService | null = null;
+
+export const navigationService = {
+  getInstance(): NavigationService {
+    if (!_navigationService) {
+      _navigationService = NavigationService.getInstance();
+    }
+    return _navigationService;
+  }
+};
