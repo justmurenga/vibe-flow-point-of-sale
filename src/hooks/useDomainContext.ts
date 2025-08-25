@@ -1,9 +1,7 @@
 import * as React from 'react';
 import { domainManager } from '@/lib/domain-manager';
 
-console.log(' [DOMAIN] useDomainContext module loading...');
-console.log('🌐 [DOMAIN] React object:', React);
-console.log(' [DOMAIN] React.useState available:', typeof React.useState);
+
 
 interface DomainConfig {
   tenantId: string | null;
@@ -19,14 +17,12 @@ let globalInitialized = false;
 let globalPromise: Promise<DomainConfig> | null = null;
 
 export function useDomainContext() {
-  console.log(' [DOMAIN] useDomainContext hook called');
-  
   try {
     const [domainConfig, setDomainConfig] = React.useState<DomainConfig | null>(globalDomainConfig);
     const [loading, setLoading] = React.useState(globalLoading);
     const [initialized, setInitialized] = React.useState(globalInitialized);
 
-    console.log('✅ [DOMAIN] useState hooks initialized successfully');
+
 
     React.useEffect(() => {
       // If already initialized globally, use the cached result
@@ -60,18 +56,14 @@ export function useDomainContext() {
 
       // Start initialization
       const initializeDomain = async (): Promise<DomainConfig> => {
-        console.log('🌐 Initializing domain context for:', window.location.hostname);
-        
         const config = await domainManager.getInstance().getCurrentDomainConfig();
-        console.log('🔍 Domain config resolved:', config);
         
         // Set up tenant context if needed
         if (config?.isSubdomain && config.tenantId) {
-          console.log('🏢 Setting up tenant context for:', config.tenantId);
           try {
             await domainManager.getInstance().setupTenantContext(config.tenantId);
           } catch (error) {
-            console.warn('⚠️ Tenant context setup failed:', error);
+            console.warn('Tenant context setup failed:', error);
           }
         }
         

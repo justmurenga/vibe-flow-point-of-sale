@@ -30,18 +30,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  console.log('🔐 [AUTH] useAuth hook called');
   const context = useContext(AuthContext);
   if (context === undefined) {
-    console.error('❌ [AUTH] useAuth must be used within an AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  console.log('🔐 [AUTH] AuthProvider component rendering...');
-  
   try {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
@@ -53,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [profileFetched, setProfileFetched] = useState<string | null>(null);
     const [fetchInProgress, setFetchInProgress] = useState<boolean>(false); // Prevent concurrent calls
 
-    console.log('✅ [AUTH] All useState hooks initialized successfully');
+
 
     // Optimized user info fetching with performance checks
     const fetchUserInfo = async (userId: string, source: string = 'unknown') => {
@@ -78,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (error && error.code !== 'PGRST116') {
           setUserRole('user');
-          const domainTenantId = domainManager.getDomainTenantId();
+          const domainTenantId = domainManager.getInstance().getDomainTenantId();
           setTenantId(domainTenantId || null);
           setRequirePasswordChange(false);
           return;
@@ -102,7 +98,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           // Fallback if no profile found
           setUserRole('user');
-          const domainTenantId = domainManager.getDomainTenantId();
+          const domainTenantId = domainManager.getInstance().getDomainTenantId();
           setTenantId(domainTenantId || null);
           setRequirePasswordChange(false);
         }
@@ -347,7 +343,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Get tenant ID from domain context first
-        let tenantId: string | null = domainManager.getDomainTenantId();
+        let tenantId: string | null = domainManager.getInstance().getDomainTenantId();
         
         // Fallback to user metadata
         if (!tenantId) {
