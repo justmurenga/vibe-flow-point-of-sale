@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { domainManager } from '@/lib/domain-manager';
 
 export interface NavigationConfig {
   mainDomain: string;
@@ -105,11 +106,12 @@ export class NavigationService {
       
       console.log('🔍 [NAVIGATION] Looking for tenant with subdomain:', subdomain);
       
+      // First, try the direct subdomain lookup
       const { data: tenant, error } = await supabase
         .from('tenants')
-        .select('id, name, status')
+        .select('id, name, status, subdomain')
         .eq('subdomain', subdomain)
-        .in('status', ['active', 'trial']) // Include both active and trial tenants
+        .in('status', ['active', 'trial'])
         .maybeSingle();
 
       if (error) {
@@ -118,12 +120,25 @@ export class NavigationService {
       }
 
       if (tenant) {
-        console.log('✅ [NAVIGATION] Found tenant:', tenant.name, 'with status:', tenant.status);
+        console.log('✅ [NAVIGATION] Found tenant via direct subdomain lookup:', tenant.name, 'with status:', tenant.status);
         return tenant.id;
-      } else {
-        console.log('❌ [NAVIGATION] No tenant found for subdomain:', subdomain);
-        return null;
       }
+
+      // If direct lookup fails, try using the domain manager's logic
+      console.log('🔄 [NAVIGATION] Direct lookup failed, trying domain manager logic...');
+      
+      try {
+        const domainConfig = await domainManager.getInstance().getCurrentDomainConfig();
+        if (domainConfig?.tenantId) {
+          console.log('✅ [NAVIGATION] Found tenant via domain manager:', domainConfig.tenantId);
+          return domainConfig.tenantId;
+        }
+      } catch (domainError) {
+        console.error('Error using domain manager:', domainError);
+      }
+
+      console.log('❌ [NAVIGATION] No tenant found for subdomain:', subdomain);
+      return null;
     } catch (error) {
       console.error('Error getting tenant from subdomain:', error);
       return null;
