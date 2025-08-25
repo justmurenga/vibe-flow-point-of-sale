@@ -3,8 +3,6 @@
  * when switching between browser tabs or windows
  */
 
-import { useState, useEffect } from 'react';
-
 interface TabState {
   isTabSwitching: boolean;
   lastVisibilityChange: number;

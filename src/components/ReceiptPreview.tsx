@@ -7,7 +7,7 @@ import { Printer, Download, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrencySettings } from "@/lib/currency";
+import { useCurrencySettings } from "@/hooks/useCurrencySettings";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 

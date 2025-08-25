@@ -32,7 +32,7 @@ import {
   Filter,
   Download
 } from 'lucide-react';
-import { useCurrencySettings } from "@/lib/currency";
+import { useCurrencySettings } from "@/hooks/useCurrencySettings";
 import { fetchAllCustomers } from '@/lib/customerUtils';
 
 interface AccountsReceivable {
