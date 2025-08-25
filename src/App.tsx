@@ -11,6 +11,17 @@ import { ErrorHandler, ErrorType, ErrorSeverity } from '@/lib/error-handling';
 import { LoggingService, LogLevel, LogCategory } from '@/services/LoggingService';
 import { useEffect } from 'react';
 
+console.log('🏗️ [APP] App component starting...');
+console.log('🏗️ [APP] React version in App:', React.version);
+
+// Add this simple error boundary component
+const SimpleErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  if (!React) {
+    return <div>React is not available</div>;
+  }
+  return <>{children}</>;
+};
+
 // Configure React Query
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,10 +42,15 @@ const queryClient = new QueryClient({
   },
 });
 
+console.log('✅ [APP] QueryClient configured');
+
 const App = () => {
+  console.log('🏗️ [APP] App component rendering...');
+  
   const logger = LoggingService.getInstance();
 
   useEffect(() => {
+    console.log('🏗️ [APP] App useEffect running...');
     // Initialize logging
     logger.info(LogCategory.SYSTEM, 'Application started', {
       version: process.env.REACT_APP_VERSION || '1.0.0',
@@ -47,6 +63,8 @@ const App = () => {
       logger.destroy();
     };
   }, [logger]);
+
+  console.log('🏗️ [APP] About to render component tree...');
 
   return (
     <ErrorBoundary>
@@ -64,5 +82,7 @@ const App = () => {
     </ErrorBoundary>
   );
 };
+
+console.log('✅ [APP] App component defined');
 
 export default App;
