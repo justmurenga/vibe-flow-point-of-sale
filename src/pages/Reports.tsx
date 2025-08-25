@@ -1419,7 +1419,13 @@ const Reports = () => {
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer" onClick={() => alert('Custom Reports - Create New Report')}>
+              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer" onClick={() => {
+                toast({
+                  title: "Coming Soon",
+                  description: "Custom reports feature is under development and will be available soon.",
+                  variant: "default"
+                });
+              }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-teal-600" />
@@ -1435,7 +1441,14 @@ const Reports = () => {
                     <p className="text-sm text-muted-foreground">Scheduled: <span className="font-semibold">0</span></p>
                     <p className="text-sm text-muted-foreground">Available: <span className="font-semibold">Coming Soon</span></p>
                   </div>
-                  <Button variant="outline" className="w-full mt-4" onClick={(e) => { e.stopPropagation(); alert('Custom reports feature coming soon!'); }}>Create Report</Button>
+                  <Button variant="outline" className="w-full mt-4" onClick={(e) => { 
+                    e.stopPropagation(); 
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Custom reports builder will be available in the next update.",
+                      variant: "default"
+                    });
+                  }}>Create Report</Button>
                 </CardContent>
               </Card>
             </div>

@@ -445,13 +445,25 @@ export function FloatingAIAssistant({ className = '' }: FloatingAIAssistantProps
                   className="flex-1"
                   disabled={isLoading}
                 />
+                {!input.trim() && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Type your question to get started
+                  </p>
+                )}
                 <Button
                   onClick={handleSendMessage}
                   disabled={!input.trim() || isLoading}
                   size="sm"
                   className="px-3"
                 >
-                  <Send className="h-4 w-4" />
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="sr-only">Sending...</span>
+                    </>
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">

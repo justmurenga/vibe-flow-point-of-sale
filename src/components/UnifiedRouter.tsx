@@ -55,6 +55,7 @@ import Communications from '@/pages/Communications';
 // AI Components
 import AIDashboard from '@/components/ai/AIDashboard';
 import AIAutomationRules from '@/components/ai/AIAutomationRules';
+import AIPerformanceMetrics from '@/components/ai/AIPerformanceMetrics';
 
 // Analytics Components
 import AdvancedAnalyticsDashboard from '@/components/analytics/AdvancedAnalyticsDashboard';
@@ -370,6 +371,18 @@ export function UnifiedRouter() {
           <ProtectedRoute>
             <TenantAdminLayout>
               <AdvancedAnalyticsDashboard />
+            </TenantAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* AI Performance Routes */}
+      <Route 
+        path="/admin/ai-performance" 
+        element={
+          <ProtectedRoute>
+            <TenantAdminLayout>
+              <AIPerformanceMetrics />
             </TenantAdminLayout>
           </ProtectedRoute>
         } 

@@ -58,28 +58,28 @@ const Footer = () => {
     {
       title: "Product",
       links: [
-        { label: "Features", href: "#features" },
-        { label: "Pricing", href: "#pricing" },
-        { label: "Demo", href: "#demo" },
-        { label: "API", href: "#api" }
+        { label: "Features", href: "/#features" },
+        { label: "Pricing", href: "/pricing" },
+        { label: "Demo", href: "/demo" },
+        { label: "API", href: "/docs" }
       ]
     },
     {
       title: "Company",
       links: [
-        { label: "About", href: "#about" },
-        { label: "Blog", href: "#blog" },
+        { label: "About", href: "/about" },
+        { label: "Blog", href: "/blog" },
         { label: "Careers", href: "/careers" },
-        { label: "Contact", href: "#contact" }
+        { label: "Contact", href: "/contact" }
       ]
     },
     {
       title: "Support",
       links: [
-        { label: "Documentation", href: "#docs" },
-        { label: "Help Center", href: "#help" },
-        { label: "Community", href: "#community" },
-        { label: "Status", href: "#status" }
+        { label: "Documentation", href: "/docs" },
+        { label: "Help Center", href: "/help" },
+        { label: "Community", href: "/community" },
+        { label: "Status", href: "/status" }
       ]
     }
   ];

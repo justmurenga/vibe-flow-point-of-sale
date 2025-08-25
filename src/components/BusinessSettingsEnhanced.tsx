@@ -516,8 +516,8 @@ export function BusinessSettingsEnhanced() {
       setSettings(data);
       
       // Refresh AppContext to ensure changes are reflected throughout the app
-      if (window.refreshAppContext) {
-        window.refreshAppContext();
+      if ((window as any).refreshAppContext) {
+        (window as any).refreshAppContext();
       }
       
       toast({
@@ -1087,7 +1087,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1212,7 +1212,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1254,7 +1254,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1316,7 +1316,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1462,7 +1462,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1501,7 +1501,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
@@ -1861,7 +1861,7 @@ export function BusinessSettingsEnhanced() {
                     Reset Changes
                   </Button>
                   <Button 
-                    onClick={() => onSubmit(form.getValues())} 
+                    onClick={form.handleSubmit(onSubmit)} 
                     disabled={isSaving}
                     className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg transition-all duration-300 hover:scale-105"
                   >
