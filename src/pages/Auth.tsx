@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Eye, EyeOff, AlertCircle, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useDomainContext } from '@/lib/domain-manager';
+import { useDomainContext } from '@/hooks/useDomainContext';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { GoogleAuthTest } from '@/components/GoogleAuthTest';
 const Auth = () => {

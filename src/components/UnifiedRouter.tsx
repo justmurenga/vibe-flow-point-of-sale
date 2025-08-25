@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDomainContext } from '@/lib/domain-manager';
+import { useDomainContext } from '@/hooks/useDomainContext';
 import { navigationService } from '@/services/NavigationService';
 import { useToast } from '@/hooks/use-toast';
 

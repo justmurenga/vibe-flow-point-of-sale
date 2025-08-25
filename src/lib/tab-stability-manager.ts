@@ -130,27 +130,5 @@ class TabStabilityManager {
 // Global singleton instance
 export const tabStabilityManager = new TabStabilityManager();
 
-// Hook for React components
-export function useTabStability() {
-  const [, forceUpdate] = useState({});
-  
-  useEffect(() => {
-    // Initialize on first use
-    tabStabilityManager.initialize();
-    
-    // Listen for state changes
-    const cleanup = tabStabilityManager.onStateChange(() => {
-      forceUpdate({});
-    });
-    
-    return cleanup;
-  }, []);
-
-  return {
-    shouldPreventAuthRefresh: tabStabilityManager.shouldPreventAuthRefresh(),
-    shouldPreventQueryRefresh: tabStabilityManager.shouldPreventQueryRefresh(),
-    isTabSwitching: tabStabilityManager.isCurrentlyTabSwitching(),
-    forceReset: tabStabilityManager.forceReset,
-    getState: tabStabilityManager.getState,
-  };
-}
+// Remove the useTabStability hook from this file
+// It's now in src/hooks/useTabStability.ts

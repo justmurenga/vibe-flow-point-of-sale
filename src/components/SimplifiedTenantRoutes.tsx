@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDomainContext } from '@/contexts/DomainContext';
+import { useDomainContext } from '@/hooks/useDomainContext';
 import { PageLoader } from '@/components/PageLoader';
 import { TenantAdminLayout } from './TenantAdminLayout';
 import ProtectedRoute from './ProtectedRoute';
