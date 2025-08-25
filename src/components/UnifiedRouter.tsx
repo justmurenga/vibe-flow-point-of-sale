@@ -31,7 +31,7 @@ import Customers from '@/pages/Customers';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import { PageLoader } from '@/components/PageLoader';
-import { ExternalIntegrationsManager } from '@/components/integrations/ExternalIntegrationsManager';
+import ExternalIntegrationsManager from '@/components/integrations/ExternalIntegrationsManager';
 
 interface UnifiedRouterProps {
   children?: React.ReactNode;

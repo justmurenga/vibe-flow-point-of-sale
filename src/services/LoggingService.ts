@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { useCallback } from 'react'; // Add this import
 
 export enum LogLevel {
   DEBUG = 'DEBUG',
@@ -236,21 +235,21 @@ export class LoggingService {
 export function useLogging() {
   const logger = LoggingService.getInstance();
 
-  const log = useCallback((
+  const log = (
     level: LogLevel,
     category: LogCategory,
     message: string,
     context?: Record<string, any>
   ) => {
     logger.log(level, category, message, context || {});
-  }, [logger]);
+  };
 
-  const time = useCallback((
+  const time = (
     category: LogCategory,
     operation: string
   ) => {
     return logger.time(category, operation);
-  }, [logger]);
+  };
 
   return { log, time, logger };
 }
