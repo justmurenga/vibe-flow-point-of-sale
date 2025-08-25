@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDomainContext } from '@/hooks/useDomainContext';
 import { navigationService } from '@/services/NavigationService';
@@ -18,111 +18,57 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import Success from '@/pages/Success';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import TermsOfService from '@/pages/TermsOfService';
+
+// Super Admin Components
 import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import TenantManagement from '@/pages/TenantManagement';
 import SuperAdminUserManagement from '@/pages/SuperAdminUserManagement';
+import SuperAdminAnalytics from '@/pages/SuperAdminAnalytics';
+import SuperAdminRevenue from '@/pages/SuperAdminRevenue';
+import SuperAdminPlanManagement from '@/pages/SuperAdminPlanManagement';
+import SuperAdminSystemHealth from '@/pages/SuperAdminSystemHealth';
+import SuperAdminDatabase from '@/pages/SuperAdminDatabase';
+import SuperAdminSecurity from '@/pages/SuperAdminSecurity';
+import SuperAdminCommunications from '@/pages/SuperAdminCommunications';
+import SuperAdminSettings from '@/pages/SuperAdminSettings';
+import { SuperAdminLayout } from '@/components/SuperAdminLayout';
+
+// Protected Components
 import Sales from '@/pages/Sales';
 import StockManagement from '@/pages/StockManagement';
 import Customers from '@/pages/Customers';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import ExternalIntegrationsManager from '@/components/integrations/ExternalIntegrationsManager';
 
+// Protected Route Component
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export function UnifiedRouter() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, loading: authLoading, userRole } = useAuth();
-  const { loading: domainLoading } = useDomainContext();
-  
-  const [isValidating, setIsValidating] = useState(true);
-  const [subdomainError, setSubdomainError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const { domainLoading } = useDomainContext();
+  const [isValidating, setIsValidating] = useState(false);
 
-  console.log('🛣️ [ROUTER] UnifiedRouter component rendering...');
-  console.log('✅ [ROUTER] All hooks initialized successfully');
-
-  // Validate subdomain access
   useEffect(() => {
-    const validateAccess = async () => {
-      if (domainLoading) return;
+    const validateSubdomain = async () => {
+      if (authLoading || domainLoading) return;
       
       const validation = await navigationService.getInstance().validateSubdomainAccess();
       if (!validation.valid) {
-        setSubdomainError(validation.error || 'Invalid subdomain access');
-      }
-      setIsValidating(false);
-    };
-
-    validateAccess();
-  }, [domainLoading]);
-
-  // Handle OAuth fragments and routing
-  useEffect(() => {
-    if (typeof window === 'undefined' || isValidating) return;
-    
-    const hash = window.location.hash;
-    const searchParams = new URLSearchParams(location.search || '');
-    
-    // Handle OAuth fragments
-    if (hash && /access_token|error|type=/.test(hash)) {
-      const callbackUrl = navigationService.getInstance().handleOAuthCallback(searchParams, hash);
-      window.location.replace(callbackUrl);
-      return;
-    }
-  }, [location, isValidating]);
-
-  // Handle authentication redirects
-  useEffect(() => {
-    if (authLoading || isValidating) return;
-    
-    if (user) {
-      const currentPath = location.pathname;
-      const routeConfig = navigationService.getInstance().getRouteConfig(currentPath);
-      
-      // Check if user has access to current route
-      if (routeConfig && !navigationService.getInstance().hasRouteAccess(currentPath, userRole)) {
-        const redirectUrl = navigationService.getInstance().getUnauthorizedRedirectUrl();
-        navigate(redirectUrl, { replace: true });
+        console.log('❌ [ROUTER] Subdomain validation failed:', validation.error);
+        // Handle invalid subdomain - could redirect to main domain or show error
         return;
       }
       
-      // Handle default redirects after login
-      const isPublicRoute = navigationService.getInstance().isRoutePublic(currentPath);
-      if (isPublicRoute && currentPath !== '/') {
-        const redirectUrl = navigationService.getInstance().getDefaultRedirectUrl(userRole);
-        navigate(redirectUrl, { replace: true });
-      }
-    } else {
-      // Handle unauthenticated access to protected routes
-      const currentPath = location.pathname;
-      if (navigationService.getInstance().isRouteProtected(currentPath)) {
-        const redirectUrl = navigationService.getInstance().getUnauthorizedRedirectUrl();
-        navigate(redirectUrl, { replace: true });
-      }
-    }
-  }, [user, authLoading, userRole, location, navigate, isValidating]);
+      setIsValidating(false);
+    };
 
-  // Show loading while validating
-  if (isValidating || domainLoading) {
+    validateSubdomain();
+  }, [authLoading, domainLoading]);
+
+  // Show loading while auth or domain is loading
+  if (authLoading || domainLoading || isValidating) {
     return <PageLoader />;
-  }
-
-  // Show subdomain error
-  if (subdomainError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Workspace Not Found</h1>
-          <p className="text-gray-600 mb-6">{subdomainError}</p>
-          <button
-            onClick={() => navigationService.getInstance().navigateToMain()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Go to Main Website
-          </button>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -146,7 +92,9 @@ export function UnifiedRouter() {
         path="/superadmin" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
-            <SuperAdminDashboard />
+            <SuperAdminLayout>
+              <SuperAdminDashboard />
+            </SuperAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -154,7 +102,9 @@ export function UnifiedRouter() {
         path="/superadmin/tenants" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
-            <TenantManagement />
+            <SuperAdminLayout>
+              <TenantManagement />
+            </SuperAdminLayout>
           </ProtectedRoute>
         } 
       />
@@ -162,7 +112,89 @@ export function UnifiedRouter() {
         path="/superadmin/users" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
-            <SuperAdminUserManagement />
+            <SuperAdminLayout>
+              <SuperAdminUserManagement />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/analytics" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminAnalytics />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/revenue" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminRevenue />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/plans" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminPlanManagement />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/system" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminSystemHealth />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/database" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminDatabase />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/security" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminSecurity />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/communications" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminCommunications />
+            </SuperAdminLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/superadmin/settings" 
+        element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <SuperAdminLayout>
+              <SuperAdminSettings />
+            </SuperAdminLayout>
           </ProtectedRoute>
         } 
       />
