@@ -78,6 +78,7 @@ import DomainManagement from '@/components/DomainManagement';
 import { CurrencyIcon } from '@/components/ui/currency-icon';
 import { PaymentManagement } from '@/components/PaymentManagement';
 import { MpesaIntegration } from '@/components/MpesaIntegration';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 
 
 const businessSettingsSchema = z.object({
@@ -197,7 +198,15 @@ const businessSettingsSchema = z.object({
   // Tax settings
   tax_inclusive: z.boolean().default(false),
   currency_symbol: z.string().default("$"),
-  date_format: z.string().default("MM/DD/YYYY")
+  date_format: z.string().default("MM/DD/YYYY"),
+  
+  // Payment Methods Configuration
+  enable_cash_payments: z.boolean().default(true),
+  enable_card_payments: z.boolean().default(true),
+  enable_mobile_money: z.boolean().default(false),
+  enable_bank_transfers: z.boolean().default(false),
+  enable_credit_sales: z.boolean().default(true),
+  pos_default_payment_method: z.string().default("cash"),
 });
 
 interface BusinessSettings {
@@ -1292,6 +1301,113 @@ export function BusinessSettingsEnhanced() {
                     {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
+              </TabsContent>
+
+              {/* Payment Methods Configuration Tab */}
+              <TabsContent value="payment-methods" className="space-y-8 mt-0">
+                <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/50">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="flex items-center gap-3 text-2xl">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                        <CreditCard className="h-6 w-6 text-primary" />
+                      </div>
+                      Payment Methods Configuration
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                      Configure which payment methods are available for sales and purchases
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg">Payment Method Settings</h4>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-base font-medium">Cash Payments</Label>
+                              <p className="text-sm text-muted-foreground">Allow cash payments for sales</p>
+                            </div>
+                            <Switch
+                              checked={form.watch('enable_cash_payments')}
+                              onCheckedChange={(checked) => form.setValue('enable_cash_payments', checked)}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-base font-medium">Card Payments</Label>
+                              <p className="text-sm text-muted-foreground">Allow credit/debit card payments</p>
+                            </div>
+                            <Switch
+                              checked={form.watch('enable_card_payments')}
+                              onCheckedChange={(checked) => form.setValue('enable_card_payments', checked)}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-base font-medium">Mobile Money</Label>
+                              <p className="text-sm text-muted-foreground">Allow mobile money payments (M-Pesa, etc.)</p>
+                            </div>
+                            <Switch
+                              checked={form.watch('enable_mobile_money')}
+                              onCheckedChange={(checked) => form.setValue('enable_mobile_money', checked)}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-base font-medium">Bank Transfers</Label>
+                              <p className="text-sm text-muted-foreground">Allow bank transfer payments</p>
+                            </div>
+                            <Switch
+                              checked={form.watch('enable_bank_transfers')}
+                              onCheckedChange={(checked) => form.setValue('enable_bank_transfers', checked)}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-base font-medium">Credit Sales</Label>
+                              <p className="text-sm text-muted-foreground">Allow credit sales with accounts receivable</p>
+                            </div>
+                            <Switch
+                              checked={form.watch('enable_credit_sales')}
+                              onCheckedChange={(checked) => form.setValue('enable_credit_sales', checked)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-lg">Default Settings</h4>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-base font-medium">Default Payment Method</Label>
+                            <p className="text-sm text-muted-foreground mb-2">Select the default payment method for new sales</p>
+                            <Select
+                              value={form.watch('pos_default_payment_method')}
+                              onValueChange={(value) => form.setValue('pos_default_payment_method', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cash">Cash</SelectItem>
+                                <SelectItem value="card">Card</SelectItem>
+                                <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="credit">Credit Sale</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               {/* Domains Tab */}

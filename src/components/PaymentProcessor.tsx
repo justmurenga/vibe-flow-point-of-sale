@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCashDrawer } from "@/hooks/useCashDrawer";
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 
 interface Payment {
   id: string;
@@ -39,9 +40,8 @@ export function PaymentProcessor({ totalAmount, onPaymentsChange, onCashPayment,
   const { formatAmount } = useCurrencySettings();
   const { tenantId } = useAuth();
   const { currentDrawer } = useCashDrawer();
+  const { paymentMethods, isLoading: isLoadingMethods, getDefaultPaymentMethod } = usePaymentMethods();
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [isLoadingMethods, setIsLoadingMethods] = useState(true);
   const [newPayment, setNewPayment] = useState({
     method: "cash",
     amount: 0,
@@ -51,6 +51,19 @@ export function PaymentProcessor({ totalAmount, onPaymentsChange, onCashPayment,
 
   const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remainingBalance = totalAmount - paidAmount;
+
+  // Set default payment method when methods are loaded
+  useEffect(() => {
+    if (paymentMethods.length > 0 && !isLoadingMethods) {
+      const defaultMethod = getDefaultPaymentMethod();
+      if (defaultMethod) {
+        setNewPayment(prev => ({ 
+          ...prev, 
+          method: defaultMethod.type 
+        }));
+      }
+    }
+  }, [paymentMethods, isLoadingMethods, getDefaultPaymentMethod]);
 
   // Fetch payment methods from database
   useEffect(() => {

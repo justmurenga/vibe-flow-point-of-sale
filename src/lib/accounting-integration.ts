@@ -197,14 +197,28 @@ export const createJournalEntry = async (
   }
 };
 
-// Get payment method asset account mapping
+// Get payment method asset account mapping - FIXED VERSION
 export const getPaymentMethodAccount = async (
   tenantId: string, 
   paymentMethodType: string
 ): Promise<string> => {
   try {
-    // Since the existing payment_methods table doesn't have account_id,
-    // we'll use the default account mapping based on payment type
+    // First, try to get the account_id from payment_methods table
+    const { data: paymentMethod, error: pmError } = await supabase
+      .from('payment_methods')
+      .select('account_id')
+      .eq('tenant_id', tenantId)
+      .eq('type', paymentMethodType)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!pmError && paymentMethod?.account_id) {
+      console.log(`Using configured account_id for payment method ${paymentMethodType}:`, paymentMethod.account_id);
+      return paymentMethod.account_id;
+    }
+
+    // Fallback to default account mapping if no account_id is configured
+    console.log(`No account_id configured for payment method ${paymentMethodType}, using default mapping`);
     const accounts = await getDefaultAccounts(tenantId);
     
     switch (paymentMethodType) {

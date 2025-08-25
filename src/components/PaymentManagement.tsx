@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 const paymentMethodSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["cash", "card", "mobile_money", "bank_transfer", "crypto", "other"]),
-  account_id: z.string().uuid("Please select an accounting account"),
+  account_id: z.string().uuid("Please select an accounting account").min(1, "Asset account is required"),
   is_active: z.boolean().default(true),
   requires_reference: z.boolean().default(false),
   description: z.string().optional(),
@@ -270,6 +270,25 @@ export function PaymentManagement() {
 
   const handleSavePaymentMethod = async (values: z.infer<typeof paymentMethodSchema>) => {
     try {
+      if (!tenantId) {
+        toast({
+          title: 'Error',
+          description: 'No tenant ID available',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validate that account_id is selected
+      if (!values.account_id) {
+        toast({
+          title: 'Error',
+          description: 'Please select an asset account for this payment method',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const paymentMethodData = {
         tenant_id: tenantId,
         name: values.name,
