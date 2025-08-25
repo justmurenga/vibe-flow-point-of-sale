@@ -18,7 +18,7 @@ import { ForgotPassword } from '@/pages/ForgotPassword';
 import { Success } from '@/pages/Success';
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy';
 import { TermsOfService } from '@/pages/TermsOfService';
-import { SuperAdminLayout } from '@/components/layouts/SuperAdminLayout';
+import { SuperAdminLayout } from '@/components/SuperAdminLayout';
 import { SuperAdminDashboard } from '@/pages/SuperAdminDashboard';
 import { TenantManagement } from '@/pages/TenantManagement';
 import { SuperAdminUserManagement } from '@/pages/SuperAdminUserManagement';
