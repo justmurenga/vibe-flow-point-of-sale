@@ -476,12 +476,31 @@ export function BusinessSettingsEnhanced() {
 
       console.log('Saving business settings:', values);
 
+      // Convert string values to numbers for tax rates and ensure they're valid numbers
+      const processedData = {
+        ...values,
+        default_tax_rate: typeof values.default_tax_rate === 'string' 
+          ? (parseFloat(values.default_tax_rate) || 0) 
+          : (values.default_tax_rate || 0),
+        purchase_default_tax_rate: typeof values.purchase_default_tax_rate === 'string' 
+          ? (parseFloat(values.purchase_default_tax_rate) || 0) 
+          : (values.purchase_default_tax_rate || 0),
+      };
+
+      // Validate that tax rates are numbers
+      if (isNaN(processedData.default_tax_rate)) {
+        processedData.default_tax_rate = 0;
+      }
+      if (isNaN(processedData.purchase_default_tax_rate)) {
+        processedData.purchase_default_tax_rate = 0;
+      }
+
       // Upsert business settings to Supabase
       const { data, error } = await supabase
         .from('business_settings')
         .upsert({
           tenant_id: tenantId,
-          ...values,
+          ...processedData,
           updated_at: new Date().toISOString()
         })
         .select()

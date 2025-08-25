@@ -32,17 +32,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
-// Schema definitions - REMOVE description field since it doesn't exist in database
+// Schema definitions - MATCH ACTUAL DATABASE SCHEMA
 const paymentMethodSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["cash", "card", "mobile_money", "bank_transfer", "crypto", "other"]),
   account_id: z.string().uuid("Please select an accounting account").min(1, "Asset account is required"),
   is_active: z.boolean().default(true),
   requires_reference: z.boolean().default(false),
-  // Remove description field - it doesn't exist in payment_methods table
-  processing_fee_percentage: z.number().min(0).max(100).optional(),
-  minimum_amount: z.number().min(0).optional(),
-  maximum_amount: z.number().min(0).optional(),
+  // Remove fields that don't exist in database
+  display_order: z.number().optional(),
 });
 
 const integrationSchema = z.object({
@@ -57,7 +55,7 @@ const integrationSchema = z.object({
   currency_code: z.string().default("KES"),
 });
 
-// Interface definitions - temporary until types are regenerated
+// Interface definitions - MATCH ACTUAL DATABASE SCHEMA
 interface PaymentMethod {
   id: string;
   tenant_id: string;
@@ -68,10 +66,6 @@ interface PaymentMethod {
   account_code?: string;
   is_active: boolean;
   requires_reference: boolean;
-  // Remove description field
-  processing_fee_percentage?: number;
-  minimum_amount?: number;
-  maximum_amount?: number;
   display_order: number;
   created_at: string;
   updated_at: string;
@@ -115,6 +109,7 @@ export function PaymentManagement() {
   const [editingIntegration, setEditingIntegration] = useState<PaymentIntegration | null>(null);
   const [showSecrets, setShowSecrets] = useState<{[key: string]: boolean}>({});
 
+  // Update form default values
   const methodForm = useForm<z.infer<typeof paymentMethodSchema>>({
     resolver: zodResolver(paymentMethodSchema),
     defaultValues: {
@@ -123,8 +118,7 @@ export function PaymentManagement() {
       account_id: '',
       is_active: true,
       requires_reference: false,
-      processing_fee_percentage: 0,
-      minimum_amount: 0,
+      display_order: 1,
     }
   });
 
@@ -297,10 +291,7 @@ export function PaymentManagement() {
         is_active: values.is_active,
         requires_reference: values.requires_reference,
         // Remove description field
-        processing_fee_percentage: values.processing_fee_percentage || null,
-        minimum_amount: values.minimum_amount || null,
-        maximum_amount: values.maximum_amount || null,
-        display_order: editingMethod?.display_order || paymentMethods.length + 1,
+        display_order: values.display_order || paymentMethods.length + 1,
       };
 
       let result;
@@ -465,6 +456,7 @@ export function PaymentManagement() {
     }));
   };
 
+  // Update openMethodDialog function
   const openMethodDialog = (method?: PaymentMethod) => {
     if (method) {
       setEditingMethod(method);
@@ -474,10 +466,7 @@ export function PaymentManagement() {
         account_id: method.account_id || '',
         is_active: method.is_active,
         requires_reference: method.requires_reference,
-        // Remove description field
-        processing_fee_percentage: method.processing_fee_percentage || 0,
-        minimum_amount: method.minimum_amount || 0,
-        maximum_amount: method.maximum_amount || undefined,
+        display_order: method.display_order || 1,
       });
     } else {
       setEditingMethod(null);
@@ -486,6 +475,7 @@ export function PaymentManagement() {
     setShowMethodDialog(true);
   };
 
+  // Update handleSubmitMethod function
   const handleSubmitMethod = async (values: z.infer<typeof paymentMethodSchema>) => {
     try {
       if (!tenantId) {
@@ -513,10 +503,7 @@ export function PaymentManagement() {
         account_id: values.account_id,
         is_active: values.is_active,
         requires_reference: values.requires_reference,
-        // Remove description field
-        processing_fee_percentage: values.processing_fee_percentage,
-        minimum_amount: values.minimum_amount,
-        maximum_amount: values.maximum_amount,
+        display_order: values.display_order || paymentMethods.length + 1,
         tenant_id: tenantId,
         updated_at: new Date().toISOString()
       };
@@ -647,13 +634,9 @@ export function PaymentManagement() {
                           <p className="text-sm text-muted-foreground">
                             {method.type.replace('_', ' ')} • 
                             {method.account_name && `Account: ${method.account_code} - ${method.account_name}`}
-                            {method.processing_fee_percentage && method.processing_fee_percentage > 0 && ` • ${method.processing_fee_percentage}% fee`}
-                            {method.minimum_amount && method.minimum_amount > 0 && ` • Min: ${businessSettings?.currency_symbol}${method.minimum_amount}`}
                             {method.requires_reference && ' • Requires Reference'}
                           </p>
-                          {method.description && (
-                            <p className="text-xs text-muted-foreground mt-1">{method.description}</p>
-                          )}
+                          {/* Remove references to non-existent fields */}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -834,63 +817,6 @@ export function PaymentManagement() {
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={methodForm.control}
-                  name="processing_fee_percentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Processing Fee (%)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number" 
-                          step="0.01"
-                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={methodForm.control}
-                  name="minimum_amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum Amount</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number" 
-                          step="0.01"
-                          onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={methodForm.control}
-                  name="maximum_amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Maximum Amount (Optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="number" 
-                          step="0.01"
-                          onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <div className="flex items-center space-x-4">
                 <FormField
